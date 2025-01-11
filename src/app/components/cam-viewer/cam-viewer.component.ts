@@ -20,6 +20,40 @@ export class CamViewerComponent implements OnInit{
   rgbResolution = '640x480';
   rgbFrameRate = '30';
 
+
+
+  stereoModuleEnabled = false;
+  rgbCameraEnabled = false;
+
+  // Control table settings
+  selectedResolution = '640x480';
+  selectedFrameRate = '30';
+  exposureValue = '8500';
+
+  // Stream state
+  streamActive = false;
+  // Controls data for the table
+  controls = [
+    {
+      name: 'Resolution',
+      options: ['640x480', '1280x720'],
+      currentValue: this.selectedResolution,
+    },
+    {
+      name: 'Frame Rate (FPS)',
+      options: ['15', '30'],
+      currentValue: this.selectedFrameRate,
+    },
+    {
+      name: 'Exposure',
+      options: null, // Exposure uses a slider, so no dropdown options are needed
+      currentValue: this.exposureValue,
+    },
+  ];
+
+  displayedColumns = ['name', 'currentValue', 'options'];
+
+
   // Selected settings
   selectedDepthResolution = this.depthResolution;
   selectedDepthFrameRate = this.depthFrameRate;
@@ -53,6 +87,23 @@ export class CamViewerComponent implements OnInit{
       this.showDepth = !this.showDepth; // Toggle Depth stream
     }
  // Methods to update settings
+ updateResolution(): void {
+  console.log('Resolution updated to:', this.selectedResolution);
+  this.controls[0].currentValue = this.selectedResolution;
+  // Add logic to send resolution update to server
+}
+
+updateFrameRate(): void {
+  console.log('Frame rate updated to:', this.selectedFrameRate);
+  this.controls[1].currentValue = this.selectedFrameRate;
+  // Add logic to send frame rate update to server
+}
+
+updateExposure(): void {
+  console.log('Exposure updated to:', this.exposureValue);
+  this.controls[2].currentValue = this.exposureValue;
+  // Add logic to send exposure update to server
+}
  updateDepthConfiguration(): void {
   this.httpConfigService.updateConfiguration(
     'depth',
