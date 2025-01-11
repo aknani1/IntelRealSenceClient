@@ -1,1 +1,73 @@
-'<img [src]="imageUrl" alt="RealSense Stream">'
+<div class="control-table">
+  <h3>Control Table</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Module</th>
+        <th>toggle</th>
+        <th>Current Resolution</th>
+        <th>Current Frame Rate</th>
+        <th>Set Resolution</th>
+        <th>Set Frame Rate</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Depth Module -->
+      <tr>
+        <td>Depth Module</td>
+        <td><mat-slide-toggle [(ngModel)]="showDepth" color="primary"><mat-icon>videocam</mat-icon> Show Depth Stream</mat-slide-toggle></td>
+        <td>{{ depthResolution }}</td>
+        <td>{{ depthFrameRate }} FPS</td>
+        <td>
+          <select [(ngModel)]="selectedDepthResolution">
+            <option value="640x480">640x480</option>
+            <option value="1280x720">1280x720</option>
+          </select>
+          <button (click)="updateDepthConfiguration()">Update</button>
+        </td>
+        <td>
+          <select [(ngModel)]="selectedDepthFrameRate">
+            <option value="15">15 FPS</option>
+            <option value="30">30 FPS</option>
+          </select>
+          <button (click)="updateDepthConfiguration()">Update</button>
+        </td>
+      </tr>
+
+      <!-- RGB Module -->
+      <tr>
+        <td>RGB Module</td>
+        <td><mat-slide-toggle [(ngModel)]="showRGB" color="primary"><mat-icon>videocam</mat-icon> Show RGB Stream</mat-slide-toggle></td>
+        <td>{{ rgbResolution }}</td>
+        <td>{{ rgbFrameRate }} FPS</td>
+        <td>
+          <select [(ngModel)]="selectedRGBResolution">
+            <option value="640x480">640x480</option>
+            <option value="1280x720">1280x720</option>
+          </select>
+          <button (click)="updateRGBConfiguration()">Update</button>
+        </td>
+        <td>
+          <select [(ngModel)]="selectedRGBFrameRate">
+            <option value="15">15 FPS</option>
+            <option value="30">30 FPS</option>
+          </select>
+          <button (click)="updateRGBConfiguration()">Update</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+  
+  <div class="video-container">
+    <div *ngIf="showRGB && colorImageUrl">
+      <h3>RGB Stream</h3>
+      <img [src]="colorImageUrl" alt="RGB Stream" />
+    </div>
+  
+    <div *ngIf="showDepth && depthImageUrl">
+      <h3>Depth Stream</h3>
+      <img [src]="depthImageUrl" alt="Depth Stream" />
+    </div>
+  </div>
