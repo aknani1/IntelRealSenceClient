@@ -1,136 +1,76 @@
-<div class="control-table">
-  <h3>Controls</h3>
-  <table mat-table [dataSource]="controls" class="mat-elevation-z8">
-    <!-- Name Column -->
-    <ng-container matColumnDef="name">
-      <th mat-header-cell *matHeaderCellDef> Name </th>
-      <td mat-cell *matCellDef="let control"> {{ control.name }} </td>
-    </ng-container>
-
-    <!-- Current Value Column -->
-    <ng-container matColumnDef="currentValue">
-      <th mat-header-cell *matHeaderCellDef> Current Value </th>
-      <td mat-cell *matCellDef="let control">
-        <span *ngIf="control.name === 'Exposure'; else dropdown">
-          <input
-            type="range"
-            min="0"
-            max="10000"
-            [(ngModel)]="exposureValue"
-            (change)="updateExposure()"
-          />
-          {{ exposureValue }}
-        </span>
-        <ng-template #dropdown>{{ control.currentValue }}</ng-template>
-      </td>
-    </ng-container>
-
-    <!-- Options Column -->
-    <ng-container matColumnDef="options">
-      <th mat-header-cell *matHeaderCellDef> Options </th>
-      <td mat-cell *matCellDef="let control">
-        <select
-          *ngIf="control.options"
-          [(ngModel)]="selectedResolution"
-          (change)="updateResolution()"
-        >
-          <option *ngFor="let option of control.options" [value]="option">
-            {{ option }}
-          </option>
-        </select>
-      </td>
-    </ng-container>
-
-    <!-- Table Header and Rows -->
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-  </table>
-</div>
-
 <div class="viewer-container">
   <!-- Sidebar -->
   <mat-sidenav-container class="sidenav-container">
     <mat-sidenav mode="side" opened>
       <div class="sidebar">
         <h3>Modules</h3>
-        <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title>Stereo Module</mat-panel-title>
-          </mat-expansion-panel-header>
-          <mat-slide-toggle [(ngModel)]="stereoModuleEnabled">Enable</mat-slide-toggle>
-        </mat-expansion-panel>
+        
+        <!-- Depth Module -->
+        <div class="module-toggle">
+          <mat-slide-toggle 
+            [(ngModel)]="depthModuleEnabled" 
+            (change)="toggleDepthModule()">
+            Depth Module
+          </mat-slide-toggle>
+          <!-- Control Panel for Depth Module -->
+          <div *ngIf="depthModuleVisible" class="control-panel">
+            <h4>Depth Module Controls</h4>
+            <p>Resolution:</p>
+            <select [(ngModel)]="selectedDepthResolution" (change)="updateDepthResolution()">
+              <option value="640x480">640x480</option>
+              <option value="1280x720">1280x720</option>
+            </select>
+            <p>Frame Rate:</p>
+            <select [(ngModel)]="selectedDepthFrameRate" (change)="updateDepthFrameRate()">
+              <option value="15">15 FPS</option>
+              <option value="30">30 FPS</option>
+            </select>
+          </div>
+        </div>
 
-        <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title>RGB Camera</mat-panel-title>
-          </mat-expansion-panel-header>
-          <mat-slide-toggle [(ngModel)]="rgbCameraEnabled">Enable</mat-slide-toggle>
-        </mat-expansion-panel>
+        <!-- RGB Camera -->
+        <div class="module-toggle">
+          <mat-slide-toggle 
+            [(ngModel)]="rgbCameraEnabled" 
+            (change)="toggleRGBCamera()">
+            RGB Camera
+          </mat-slide-toggle>
+          <!-- Control Panel for RGB Camera -->
+          <div *ngIf="rgbCameraVisible" class="control-panel">
+            <h4>RGB Camera Controls</h4>
+            <p>Resolution:</p>
+            <select [(ngModel)]="selectedRGBResolution" (change)="updateRGBResolution()">
+              <option value="640x480">640x480</option>
+              <option value="1280x720">1280x720</option>
+            </select>
+            <p>Frame Rate:</p>
+            <select [(ngModel)]="selectedRGBFrameRate" (change)="updateRGBFrameRate()">
+              <option value="15">15 FPS</option>
+              <option value="30">30 FPS</option>
+            </select>
+          </div>
+        </div>
       </div>
     </mat-sidenav>
 
-    <!-- Main Content -->
-    <mat-sidenav-content>
-      <div class="main-content">
-        <!-- Control Table -->
-        <div class="control-table">
-          <h3>Controls</h3>
-          <table mat-table [dataSource]="controls" class="mat-elevation-z8">
-            <!-- Resolution -->
-            <ng-container matColumnDef="resolution">
-              <th mat-header-cell *matHeaderCellDef> Resolution </th>
-              <td mat-cell *matCellDef="let control">
-                <select [(ngModel)]="selectedResolution" (change)="updateResolution()">
-                  <option value="640x480">640x480</option>
-                  <option value="1280x720">1280x720</option>
-                </select>
-              </td>
-            </ng-container>
+    <!-- Streaming Container -->
+    <mat-sidenav-content class="streaming-container">
+      <!-- Placeholder or Streams -->
+      <div *ngIf="!showDepth && !showRGB" class="placeholder-text">
+        Nothing is streaming! Toggle a module to start.
+      </div>
 
-            <!-- Frame Rate -->
-            <ng-container matColumnDef="frameRate">
-              <th mat-header-cell *matHeaderCellDef> Frame Rate (FPS) </th>
-              <td mat-cell *matCellDef="let control">
-                <select [(ngModel)]="selectedFrameRate" (change)="updateFrameRate()">
-                  <option value="15">15 FPS</option>
-                  <option value="30">30 FPS</option>
-                </select>
-              </td>
-            </ng-container>
+      <!-- Depth Stream -->
+      <div *ngIf="showDepth && depthImageUrl" class="stream-box">
+        <h3 class="stream-title">Depth Stream</h3>
+        <img [src]="depthImageUrl" alt="Depth Stream" />
+      </div>
 
-            <!-- Exposure -->
-            <ng-container matColumnDef="exposure">
-              <th mat-header-cell *matHeaderCellDef> Exposure </th>
-              <td mat-cell *matCellDef="let control">
-                <input type="range" min="0" max="10000" [(ngModel)]="exposureValue" (change)="updateExposure()" />
-                {{ exposureValue }}
-              </td>
-            </ng-container>
-
-            <!-- Table Header and Rows -->
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          </table>
-        </div>
-
-        <!-- Viewer Area -->
-        <div class="viewer-area">
-          <p *ngIf="!streamActive">Nothing is streaming! Toggle a module to start.</p>
-          <!-- Add video stream rendering here -->
-        </div>
+      <!-- RGB Stream -->
+      <div *ngIf="showRGB && colorImageUrl" class="stream-box">
+        <h3 class="stream-title">RGB Stream</h3>
+        <img [src]="colorImageUrl" alt="RGB Stream" />
       </div>
     </mat-sidenav-content>
   </mat-sidenav-container>
 </div>
-  
-  <div class="video-container">
-    <div *ngIf="showRGB && colorImageUrl">
-      <h3>RGB Stream</h3>
-      <img [src]="colorImageUrl" alt="RGB Stream" />
-    </div>
-  
-    <div *ngIf="showDepth && depthImageUrl">
-      <h3>Depth Stream</h3>
-      <img [src]="depthImageUrl" alt="Depth Stream" />
-    </div>
-  </div>

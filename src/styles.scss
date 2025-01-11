@@ -1,14 +1,15 @@
 @import '@angular/material/prebuilt-themes/deeppurple-amber.css';
 
-body {
-  background-color: #1e1e1e; /* Dark background */
-  color: #ffffff; /* Light text */
-  font-family: 'Roboto', sans-serif;
+
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #000000; /* Black background */
+  color: #ffffff; /* Light text color */
 }
 
-h3 {
-  color: #90caf9; /* Light blue for headers */
+.mat-sidenav-container {
+  background-color: #000000; /* Black background for the sidenav container */
 }
-
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
