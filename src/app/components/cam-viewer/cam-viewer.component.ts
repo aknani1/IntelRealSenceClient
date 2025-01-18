@@ -29,6 +29,11 @@ export class CamViewerComponent implements OnInit {
    selectedRGBResolution: string = '640x480';
    selectedRGBFrameRate: string = '30';
  
+
+    // Exposure values
+  depthExposureValue: number = 8500; // Default exposure for Depth Module
+  rgbExposureValue: number = 8500; // Default exposure for RGB Camera
+
   constructor(
     private webSocketService: WebSocketService,
     private httpConfigService: HttpConfigService
@@ -64,27 +69,64 @@ export class CamViewerComponent implements OnInit {
     console.log('RGB Camera:', this.rgbCameraEnabled ? 'Enabled' : 'Disabled');
   }
 
-  // Update Depth Resolution
+  // Update Depth Module Configuration
   updateDepthResolution(): void {
-    console.log('Updated Depth Resolution:', this.selectedDepthResolution);
-    // Add logic to send resolution update to server
+    console.log('Updating Depth Resolution:', this.selectedDepthResolution);
+    this.sendConfigurationUpdate('depth', this.selectedDepthResolution, this.selectedDepthFrameRate);
   }
 
-  // Update Depth Frame Rate
   updateDepthFrameRate(): void {
-    console.log('Updated Depth Frame Rate:', this.selectedDepthFrameRate);
-    // Add logic to send frame rate update to server
+    console.log('Updating Depth Frame Rate:', this.selectedDepthFrameRate);
+    this.sendConfigurationUpdate('depth', this.selectedDepthResolution, this.selectedDepthFrameRate);
   }
 
-  // Update RGB Resolution
+  // Update RGB Module Configuration
   updateRGBResolution(): void {
-    console.log('Updated RGB Resolution:', this.selectedRGBResolution);
-    // Add logic to send resolution update to server
+    console.log('Updating RGB Resolution:', this.selectedRGBResolution);
+    this.sendConfigurationUpdate('rgb', this.selectedRGBResolution, this.selectedRGBFrameRate);
   }
 
-  // Update RGB Frame Rate
   updateRGBFrameRate(): void {
-    console.log('Updated RGB Frame Rate:', this.selectedRGBFrameRate);
-    // Add logic to send frame rate update to server
+    console.log('Updating RGB Frame Rate:', this.selectedRGBFrameRate);
+    this.sendConfigurationUpdate('rgb', this.selectedRGBResolution, this.selectedRGBFrameRate);
+  }
+
+  // Helper method to send configuration updates to the server
+  private sendConfigurationUpdate(module: string, resolution: string, frameRate: string): void {
+    this.httpConfigService.updateConfiguration(module, resolution, frameRate).subscribe(
+      (response) => {
+        console.log(`${module} Module Updated Successfully`, response);
+        alert(`${module} Module Updated Successfully:\nResolution: ${resolution}\nFrame Rate: ${frameRate}`);
+      },
+      (error) => {
+        console.error(`Error updating ${module} Module`, error);
+        alert(`Error updating ${module} Module:\n${error.message}`);
+      }
+    );
+  }
+ // Method to update Depth Module Exposure
+  updateDepthExposure(): void {
+    console.log('Updating Depth Exposure:', this.depthExposureValue);
+    this.httpConfigService.updateExposure('depth', this.depthExposureValue).subscribe(
+      (response) => {
+        console.log('Depth Exposure Updated Successfully', response);
+      },
+      (error) => {
+        console.error('Error updating Depth Exposure', error);
+      }
+    );
+  }
+
+  // Method to update RGB Camera Exposure
+  updateRGBExposure(): void {
+    console.log('Updating RGB Exposure:', this.rgbExposureValue);
+    this.httpConfigService.updateExposure('rgb', this.rgbExposureValue).subscribe(
+      (response) => {
+        console.log('RGB Exposure Updated Successfully', response);
+      },
+      (error) => {
+        console.error('Error updating RGB Exposure', error);
+      }
+    );
   }
 }

@@ -25,6 +25,16 @@
               <option value="15">15 FPS</option>
               <option value="30">30 FPS</option>
             </select>
+            <!-- Exposure Slider -->
+            <p>Exposure:</p>
+            <input 
+              type="range" 
+              min="0" 
+              max="10000" 
+              step="100" 
+              [(ngModel)]="depthExposureValue" 
+              (change)="updateDepthExposure()" />
+            {{ depthExposureValue }}
           </div>
         </div>
 
@@ -48,6 +58,16 @@
               <option value="15">15 FPS</option>
               <option value="30">30 FPS</option>
             </select>
+             <!-- Exposure Slider -->
+             <p>Exposure:</p>
+             <input 
+               type="range" 
+               min="0" 
+               max="10000" 
+               step="100" 
+               [(ngModel)]="rgbExposureValue" 
+               (change)="updateRGBExposure()" />
+             {{ rgbExposureValue }}
           </div>
         </div>
       </div>
