@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { io } from 'socket.io-client';
 import { Observable } from 'rxjs';
+import { CamViewerComponent } from '../components/cam-viewer/cam-viewer.component';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +24,7 @@ export class WebSocketService {
       });
     });
   }
+
   sendConfigurationUpdate(module: string, resolution: string, frameRate: string): void {
     const data = { module, resolution, frameRate };
     this.socket.emit('update_configuration', data);

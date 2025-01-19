@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { WebSocketService } from '../../services/web-socket.service';
 import { HttpConfigService } from '../../services/http-config.service';
+import { switchMap, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
+
 
 @Component({
   selector: 'app-cam-viewer',
@@ -92,18 +95,43 @@ export class CamViewerComponent implements OnInit {
   }
 
   // Helper method to send configuration updates to the server
+  
   private sendConfigurationUpdate(module: string, resolution: string, frameRate: string): void {
-    this.httpConfigService.updateConfiguration(module, resolution, frameRate).subscribe(
-      (response) => {
-        console.log(`${module} Module Updated Successfully`, response);
-        alert(`${module} Module Updated Successfully:\nResolution: ${resolution}\nFrame Rate: ${frameRate}`);
-      },
-      (error) => {
-        console.error(`Error updating ${module} Module`, error);
-        alert(`Error updating ${module} Module:\n${error.message}`);
-      }
-    );
+    this.httpConfigService.updateConfiguration(module, resolution, frameRate)
+      .pipe(
+        // Wait for the HTTP response
+        switchMap((response) => {
+          console.log(`${module} Module Updated Successfully`, response);
+          alert(`${module} Module Updated Successfully:\nResolution: ${resolution}\nFrame Rate: ${frameRate}`);
+  
+          // Start WebSocket stream after HTTP response
+          this.webSocketService.startStream();
+  
+          // Return the video stream observable
+          return this.webSocketService.getVideoStream();
+        }),
+        catchError((error) => {
+          console.error(`Error updating ${module} Module`, error);
+          alert(`Error updating ${module} Module:\n${error.message}`);
+          return of(null); // Handle error gracefully
+        })
+      )
+      .subscribe((frame) => {
+        if (frame) {
+          if (this.showRGB) {
+            this.colorImageUrl = 'data:image/jpeg;base64,' + frame.color;
+          } else {
+            this.colorImageUrl = '';
+          }
+          if (this.showDepth) {
+            this.depthImageUrl = 'data:image/jpeg;base64,' + frame.depth;
+          } else {
+            this.depthImageUrl = '';
+          }
+        }
+      });
   }
+  
  // Method to update Depth Module Exposure
   updateDepthExposure(): void {
     console.log('Updating Depth Exposure:', this.depthExposureValue);
@@ -120,13 +148,16 @@ export class CamViewerComponent implements OnInit {
   // Method to update RGB Camera Exposure
   updateRGBExposure(): void {
     console.log('Updating RGB Exposure:', this.rgbExposureValue);
-    this.httpConfigService.updateExposure('rgb', this.rgbExposureValue).subscribe(
+    this.httpConfigService.updateExposure('rgb', this.rgbExposureValue)
+    .subscribe(
+      // Wait for the HTTP response
       (response) => {
         console.log('RGB Exposure Updated Successfully', response);
       },
-      (error) => {
-        console.error('Error updating RGB Exposure', error);
-      }
-    );
+      catchError((error) => {
+        console.error(`Error updating Module`, error);
+        return of(null); // Handle error gracefully
+      })
+    )
   }
 }
