@@ -34,8 +34,8 @@ export class CamViewerComponent implements OnInit {
  
 
     // Exposure values
-  depthExposureValue: number = 8500; // Default exposure for Depth Module
-  rgbExposureValue: number = 8500; // Default exposure for RGB Camera
+  depthExposureValue: number = 250; // Default exposure for Depth Module
+  rgbExposureValue: number = 250; // Default exposure for RGB Camera
 
   constructor(
     private webSocketService: WebSocketService,
