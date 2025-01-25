@@ -17,7 +17,7 @@
             <h4>Depth Module Controls</h4>
             <p>Resolution:</p>
             <select [(ngModel)]="selectedDepthResolution" (change)="updateDepthResolution()">
-              <option value="640x480">640x480</option>
+              <option value="640x480">640x360</option>
               <option value="1280x720">1280x720</option>
             </select>
             <p>Frame Rate:</p>
@@ -30,11 +30,17 @@
             <input 
               type="range" 
               min="0" 
-              max="10000" 
-              step="100" 
+              max="800" 
+              step="20" 
               [(ngModel)]="depthExposureValue" 
               (change)="updateDepthExposure()" />
             {{ depthExposureValue }}
+            <mat-slide-toggle
+            [(ngModel)]="depthMetadataEnabled"
+            (change)="toggleDepthMetadata()"
+          >
+            Show Metadata
+          </mat-slide-toggle>
           </div>
         </div>
 
@@ -50,7 +56,7 @@
             <h4>RGB Camera Controls</h4>
             <p>Resolution:</p>
             <select [(ngModel)]="selectedRGBResolution" (change)="updateRGBResolution()">
-              <option value="640x480">640x480</option>
+              <option value="640x480">640x360</option>
               <option value="1280x720">1280x720</option>
             </select>
             <p>Frame Rate:</p>
@@ -63,11 +69,17 @@
              <input 
                type="range" 
                min="0" 
-               max="10000" 
-               step="100" 
+               max="800" 
+               step="20" 
                [(ngModel)]="rgbExposureValue" 
                (change)="updateRGBExposure()" />
              {{ rgbExposureValue }}
+             <mat-slide-toggle
+             [(ngModel)]="rgbMetadataEnabled"
+             (change)="toggleRGBMetadata()"
+           >
+             Show Metadata
+           </mat-slide-toggle>
           </div>
         </div>
       </div>

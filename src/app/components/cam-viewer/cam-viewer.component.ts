@@ -31,9 +31,12 @@ export class CamViewerComponent implements OnInit {
  
 
     // Exposure values
-  depthExposureValue: number = 8500; // Default exposure for Depth Module
-  rgbExposureValue: number = 8500; // Default exposure for RGB Camera
+  depthExposureValue: number = 203; // Default exposure for Depth Module
+  rgbExposureValue: number = 203; // Default exposure for RGB Camera
 
+  depthMetadataEnabled: boolean = false;
+  rgbMetadataEnabled: boolean = false;
+  
   constructor(
     private webSocketService: WebSocketService,
     private httpConfigService: HttpConfigService
@@ -97,6 +100,7 @@ export class CamViewerComponent implements OnInit {
       (response) => {
         console.log(`${module} Module Updated Successfully`, response);
         alert(`${module} Module Updated Successfully:\nResolution: ${resolution}\nFrame Rate: ${frameRate}`);
+        this.webSocketService.startStream();
       },
       (error) => {
         console.error(`Error updating ${module} Module`, error);
@@ -127,6 +131,21 @@ export class CamViewerComponent implements OnInit {
       (error) => {
         console.error('Error updating RGB Exposure', error);
       }
+    );
+  }
+  toggleDepthMetadata(): void {
+    this.depthMetadataEnabled = !this.depthMetadataEnabled;
+    this.httpConfigService.toggleMetadata('depth').subscribe(
+      response => console.log('Depth metadata toggled', response),
+      error => console.error(error)
+    );
+  }
+  
+  toggleRGBMetadata(): void {
+    this.rgbMetadataEnabled = !this.rgbMetadataEnabled;
+    this.httpConfigService.toggleMetadata('rgb').subscribe(
+      response => console.log('RGB metadata toggled', response),
+      error => console.error(error)
     );
   }
 }
