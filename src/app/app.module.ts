@@ -17,7 +17,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
-// Import your components
 import { CamViewerComponent } from './components/cam-viewer/cam-viewer.component';
 import { SidebarControlsComponent } from './components/sidebar-controls/sidebar-controls.component';
 import { CamStreamsComponent } from './components/cam-streams/cam-streams.component';

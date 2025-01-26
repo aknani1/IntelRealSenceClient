@@ -17,11 +17,13 @@
   <!-- Streaming Container -->
   <mat-sidenav-content>
     <app-cam-streams
-      [showDepth]="showDepth"
-      [showRGB]="showRGB"
-      [depthImageUrl]="depthImageUrl"
-      [colorImageUrl]="colorImageUrl"
-    ></app-cam-streams>
+    [showDepth]="showDepth"
+    [showRGB]="showRGB"
+    [depthImageUrl]="depthImageUrl"
+    [colorImageUrl]="colorImageUrl"
+    [depthMetadataLines]="depthMetadataLines"
+    [rgbMetadataLines]="rgbMetadataLines"
+  ></app-cam-streams>
         <!-- Reconfiguring Overlay -->
         <div class="overlay" *ngIf="isReconfiguring">
           <div class="overlay-content">

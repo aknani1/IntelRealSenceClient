@@ -16,9 +16,21 @@ export class WebSocketService {
     this.socket.emit('start_stream');
   }
 
-  getVideoStream(): Observable<{ color: string; depth: string }> {
+  getVideoStream(): Observable<{
+    color: string;
+    depth: string;
+    metadata?: {
+      rgb?: string[];
+      depth?: string[];
+    };
+  }> {
     return new Observable((observer) => {
-      this.socket.on('video_frame', (frame: { color: string; depth: string }) => {
+      this.socket.on('video_frame', (frame: {
+          color: string; depth: string; metadata?: {
+            rgb?: string[];
+            depth?: string[];
+          };
+        } | undefined) => {
         observer.next(frame);
       });
     });

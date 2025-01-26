@@ -10,15 +10,19 @@ html, body, app-root {
   font-family: 'Roboto', sans-serif;
 }
 
-/* Force the mat-sidenav-container to also fill available height */
-.mat-sidenav-container,
-.mat-sidenav-content {
-  height: 100%;
-  background-color: $dark-background;
+
+::ng-deep .mat-sidenav-content,
+::ng-deep .mat-drawer-content,
+::ng-deep .mat-typography {
+  background-color: $darkest-background !important;
+  color: $primary-text !important;
 }
 
-
-/* For a smoother control-panel animation */
-.module-toggle .control-panel {
-  transition: all 0.3s ease-in-out;
+// If you see white backgrounds in mat-expansion-panel, mat-select, etc.:
+::ng-deep .mat-expansion-panel,
+::ng-deep .mat-expansion-panel-header,
+::ng-deep .mat-select-panel {
+  background-color: $dark-background !important;
+  color: $primary-text !important;
 }
+

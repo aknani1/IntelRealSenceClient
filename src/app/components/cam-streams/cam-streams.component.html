@@ -3,7 +3,7 @@
   [class.single-stream]="(showDepth && !showRGB) || (!showDepth && showRGB)"
   [class.double-stream]="showDepth && showRGB"
 >
-  <!-- Show nothing-to-stream placeholder if both toggles off -->
+  <!-- If both toggles are off, show placeholder -->
   <div *ngIf="!showDepth && !showRGB" class="placeholder-text">
     Nothing to stream!
   </div>
@@ -11,22 +11,26 @@
   <!-- Depth Stream -->
   <div *ngIf="showDepth" class="stream-box">
     <h3 class="stream-title">Depth Stream</h3>
-    <ng-container *ngIf="depthImageUrl; else noDepthText">
+    <div class="img-container">
       <img [src]="depthImageUrl" alt="Depth Stream" />
-    </ng-container>
-    <ng-template #noDepthText>
-      <p>No Depth Image Feed</p>
-    </ng-template>
+      <div class="metadata-overlay" *ngIf="depthMetadataLines.length > 0">
+        <ul>
+          <li *ngFor="let line of depthMetadataLines">{{ line }}</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
   <!-- RGB Stream -->
   <div *ngIf="showRGB" class="stream-box">
     <h3 class="stream-title">RGB Stream</h3>
-    <ng-container *ngIf="colorImageUrl; else noRgbText">
+    <div class="img-container">
       <img [src]="colorImageUrl" alt="RGB Stream" />
-    </ng-container>
-    <ng-template #noRgbText>
-      <p>No RGB Image Feed</p>
-    </ng-template>
+      <div class="metadata-overlay" *ngIf="rgbMetadataLines.length > 0">
+        <ul>
+          <li *ngFor="let line of rgbMetadataLines">{{ line }}</li>
+        </ul>
+      </div>
+    </div>
   </div>
 </div>

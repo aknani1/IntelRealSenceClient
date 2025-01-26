@@ -42,7 +42,8 @@ export class CamViewerComponent implements OnInit {
   showRGB = false;
 
   isReconfiguring = false;
-
+  public rgbMetadataLines: string[] = [];
+  public depthMetadataLines: string[] = [];
   // Streamed images
   depthImageUrl: string = '';
   colorImageUrl: string = '';
@@ -60,16 +61,23 @@ export class CamViewerComponent implements OnInit {
 
     // Subscribe to incoming frames
     this.webSocketService.getVideoStream().subscribe(frame => {
+      // Show images if toggles are on
       if (this.showRGB) {
         this.colorImageUrl = 'data:image/jpeg;base64,' + frame.color;
       } else {
         this.colorImageUrl = '';
       }
-
+    
       if (this.showDepth) {
         this.depthImageUrl = 'data:image/jpeg;base64,' + frame.depth;
       } else {
         this.depthImageUrl = '';
+      }
+    
+      // If metadata is present, store it
+      if (frame.metadata) {
+        this.rgbMetadataLines = frame.metadata.rgb || [];
+        this.depthMetadataLines = frame.metadata.depth || [];
       }
     });
   }

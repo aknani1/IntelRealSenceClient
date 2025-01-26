@@ -17,4 +17,6 @@ export class CamStreamsComponent {
 
   @Input() depthImageUrl: string | null = null;
   @Input() colorImageUrl: string | null = null;
+  @Input() depthMetadataLines: string[] = [];
+  @Input() rgbMetadataLines: string[] = [];
 }
