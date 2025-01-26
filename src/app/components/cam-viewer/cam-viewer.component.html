@@ -1,108 +1,33 @@
-<div class="viewer-container">
+<mat-sidenav-container class="viewer-container">
   <!-- Sidebar -->
-  <mat-sidenav-container class="sidenav-container">
-    <mat-sidenav mode="side" opened>
-      <div class="sidebar">
-        <h3>Modules</h3>
-        
-        <!-- Depth Module -->
-        <div class="module-toggle">
-          <mat-slide-toggle 
-            [(ngModel)]="depthModuleEnabled" 
-            (change)="toggleDepthModule()">
-            Depth Module
-          </mat-slide-toggle>
-          <!-- Control Panel for Depth Module -->
-          <div *ngIf="depthModuleVisible" class="control-panel">
-            <h4>Depth Module Controls</h4>
-            <p>Resolution:</p>
-            <select [(ngModel)]="selectedDepthResolution" (change)="updateDepthResolution()">
-              <option value="640x480">640x360</option>
-              <option value="1280x720">1280x720</option>
-            </select>
-            <p>Frame Rate:</p>
-            <select [(ngModel)]="selectedDepthFrameRate" (change)="updateDepthFrameRate()">
-              <option value="15">15 FPS</option>
-              <option value="30">30 FPS</option>
-            </select>
-            <!-- Exposure Slider -->
-            <p>Exposure:</p>
-            <input 
-              type="range" 
-              min="0" 
-              max="800" 
-              step="20" 
-              [(ngModel)]="depthExposureValue" 
-              (change)="updateDepthExposure()" />
-            {{ depthExposureValue }}
-            <mat-slide-toggle
-            [(ngModel)]="depthMetadataEnabled"
-            (change)="toggleDepthMetadata()"
-          >
-            Show Metadata
-          </mat-slide-toggle>
+  <mat-sidenav mode="side" opened>
+    <app-sidebar-controls
+      (depthToggleChange)="onDepthToggle($event)"
+      (rgbToggleChange)="onRgbToggle($event)"
+      (depthResolutionChange)="updateDepthConfig($event)"
+      (rgbResolutionChange)="updateRGBConfig($event)"
+      (depthExposureChange)="updateDepthExposure($event)"
+      (rgbExposureChange)="updateRGBExposure($event)"
+      (depthMetadataToggle)="onDepthMetadataToggle($event)"
+      (rgbMetadataToggle)="onRgbMetadataToggle($event)"
+    >
+    </app-sidebar-controls>
+  </mat-sidenav>
+
+  <!-- Streaming Container -->
+  <mat-sidenav-content>
+    <app-cam-streams
+      [showDepth]="showDepth"
+      [showRGB]="showRGB"
+      [depthImageUrl]="depthImageUrl"
+      [colorImageUrl]="colorImageUrl"
+    ></app-cam-streams>
+        <!-- Reconfiguring Overlay -->
+        <div class="overlay" *ngIf="isReconfiguring">
+          <div class="overlay-content">
+            <mat-icon class="spinner">autorenew</mat-icon>
+            <p>Reconfiguring. Please wait...</p>
           </div>
         </div>
-
-        <!-- RGB Camera -->
-        <div class="module-toggle">
-          <mat-slide-toggle 
-            [(ngModel)]="rgbCameraEnabled" 
-            (change)="toggleRGBCamera()">
-            RGB Camera
-          </mat-slide-toggle>
-          <!-- Control Panel for RGB Camera -->
-          <div *ngIf="rgbCameraVisible" class="control-panel">
-            <h4>RGB Camera Controls</h4>
-            <p>Resolution:</p>
-            <select [(ngModel)]="selectedRGBResolution" (change)="updateRGBResolution()">
-              <option value="640x480">640x360</option>
-              <option value="1280x720">1280x720</option>
-            </select>
-            <p>Frame Rate:</p>
-            <select [(ngModel)]="selectedRGBFrameRate" (change)="updateRGBFrameRate()">
-              <option value="15">15 FPS</option>
-              <option value="30">30 FPS</option>
-            </select>
-             <!-- Exposure Slider -->
-             <p>Exposure:</p>
-             <input 
-               type="range" 
-               min="0" 
-               max="800" 
-               step="20" 
-               [(ngModel)]="rgbExposureValue" 
-               (change)="updateRGBExposure()" />
-             {{ rgbExposureValue }}
-             <mat-slide-toggle
-             [(ngModel)]="rgbMetadataEnabled"
-             (change)="toggleRGBMetadata()"
-           >
-             Show Metadata
-           </mat-slide-toggle>
-          </div>
-        </div>
-      </div>
-    </mat-sidenav>
-
-    <!-- Streaming Container -->
-    <mat-sidenav-content class="streaming-container">
-      <!-- Placeholder or Streams -->
-      <div *ngIf="!showDepth && !showRGB" class="placeholder-text">
-        Nothing is streaming! Toggle a module to start.
-      </div>
-
-      <!-- Depth Stream -->
-      <div *ngIf="showDepth && depthImageUrl" class="stream-box">
-        <h3 class="stream-title">Depth Stream</h3>
-        <img [src]="depthImageUrl" alt="Depth Stream" />
-      </div>
-
-      <!-- RGB Stream -->
-      <div *ngIf="showRGB && colorImageUrl" class="stream-box">
-        <h3 class="stream-title">RGB Stream</h3>
-        <img [src]="colorImageUrl" alt="RGB Stream" />
-      </div>
-    </mat-sidenav-content>
-  </mat-sidenav-container>
-</div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

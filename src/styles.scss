@@ -1,15 +1,24 @@
-@import '@angular/material/prebuilt-themes/deeppurple-amber.css';
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+@import './app/styles/variables';
 
-
-
-html, body {
+html, body, app-root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #000000; /* Black background */
-  color: #ffffff; /* Light text color */
+  background-color: $darkest-background;
+  color: $primary-text;
+  font-family: 'Roboto', sans-serif;
 }
 
-.mat-sidenav-container {
-  background-color: #000000; /* Black background for the sidenav container */
+/* Force the mat-sidenav-container to also fill available height */
+.mat-sidenav-container,
+.mat-sidenav-content {
+  height: 100%;
+  background-color: $dark-background;
+}
+
+
+/* For a smoother control-panel animation */
+.module-toggle .control-panel {
+  transition: all 0.3s ease-in-out;
 }

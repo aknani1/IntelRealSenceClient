@@ -1,55 +1,71 @@
+// cam-viewer.component.ts
 import { Component, OnInit } from '@angular/core';
 import { WebSocketService } from '../../services/web-socket.service';
 import { HttpConfigService } from '../../services/http-config.service';
+import { SidebarControlsComponent } from '../sidebar-controls/sidebar-controls.component';
+import { CamStreamsComponent } from '../cam-streams/cam-streams.component';
+import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTableModule } from '@angular/material/table';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { AppRoutingModule } from '../../app-routing.module';
 
 @Component({
   selector: 'app-cam-viewer',
-  standalone: false,
   templateUrl: './cam-viewer.component.html',
   styleUrls: ['./cam-viewer.component.scss'],
+  standalone: true,
+  imports: [SidebarControlsComponent,CamStreamsComponent,    BrowserModule,
+      AppRoutingModule,
+      MatSlideToggleModule,
+      BrowserAnimationsModule,
+      FormsModule,
+      MatIconModule,
+      MatSidenavModule,
+      MatExpansionModule,
+      MatTableModule,
+      MatInputModule,
+      MatSelectModule,
+      MatButtonModule,
+      ]
 })
 export class CamViewerComponent implements OnInit {
-   // Sidebar toggles
-   depthModuleEnabled: boolean = false;
-   rgbCameraEnabled: boolean = false;
- 
-   // Control panel visibility
-   depthModuleVisible: boolean = false;
-   rgbCameraVisible: boolean = false;
- 
-   // Stream settings
-   showDepth: boolean = false;
-   showRGB: boolean = false;
-   depthImageUrl: string = '';
-   colorImageUrl: string = '';
- 
-   // Control panel settings
-   selectedDepthResolution: string = '640x480';
-   selectedDepthFrameRate: string = '30';
-   selectedRGBResolution: string = '640x480';
-   selectedRGBFrameRate: string = '30';
- 
+  // Stream toggles
+  showDepth = false;
+  showRGB = false;
 
-    // Exposure values
-  depthExposureValue: number = 203; // Default exposure for Depth Module
-  rgbExposureValue: number = 203; // Default exposure for RGB Camera
+  isReconfiguring = false;
 
-  depthMetadataEnabled: boolean = false;
-  rgbMetadataEnabled: boolean = false;
-  
+  // Streamed images
+  depthImageUrl: string = '';
+  colorImageUrl: string = '';
+  // Local copies of metadata booleans
+  depthMetadataOn = false;
+  rgbMetadataOn = false;
   constructor(
     private webSocketService: WebSocketService,
     private httpConfigService: HttpConfigService
   ) {}
 
   ngOnInit(): void {
+    // Start streaming
     this.webSocketService.startStream();
-    this.webSocketService.getVideoStream().subscribe((frame) => {
+
+    // Subscribe to incoming frames
+    this.webSocketService.getVideoStream().subscribe(frame => {
       if (this.showRGB) {
         this.colorImageUrl = 'data:image/jpeg;base64,' + frame.color;
       } else {
         this.colorImageUrl = '';
       }
+
       if (this.showDepth) {
         this.depthImageUrl = 'data:image/jpeg;base64,' + frame.depth;
       } else {
@@ -58,42 +74,56 @@ export class CamViewerComponent implements OnInit {
     });
   }
 
-  // Toggle Depth Module
-  toggleDepthModule(): void {
-    this.depthModuleVisible = !this.depthModuleVisible;
-    this.showDepth = this.depthModuleEnabled;
-    console.log('Depth Module:', this.depthModuleEnabled ? 'Enabled' : 'Disabled');
+  // Called when depth toggle changes
+  onDepthToggle(newValue: boolean) {
+    this.showDepth = newValue;
+    console.log('Depth Module:', newValue ? 'Enabled' : 'Disabled');
   }
 
-  // Toggle RGB Camera
-  toggleRGBCamera(): void {
-    this.rgbCameraVisible = !this.rgbCameraVisible;
-    this.showRGB = this.rgbCameraEnabled;
-    console.log('RGB Camera:', this.rgbCameraEnabled ? 'Enabled' : 'Disabled');
+
+  onRgbToggle(newValue: boolean) {
+    this.showRGB = newValue;
+    console.log('RGB Module:', newValue ? 'Enabled' : 'Disabled');
   }
 
-  // Update Depth Module Configuration
-  updateDepthResolution(): void {
-    console.log('Updating Depth Resolution:', this.selectedDepthResolution);
-    this.sendConfigurationUpdate('depth', this.selectedDepthResolution, this.selectedDepthFrameRate);
+
+  // Called when updating Depth config
+  updateDepthConfig(event: { resolution: string; frameRate: string }) {
+    this.isReconfiguring = true;
+    this.httpConfigService.updateConfiguration('depth', event.resolution, event.frameRate)
+      .subscribe(
+        response => {
+          console.log('Depth config updated', response);
+          alert(`Depth Updated: ${event.resolution}@${event.frameRate}fps`);
+          this.webSocketService.startStream();
+          this.isReconfiguring = false;
+        },
+        error => {
+          console.error('Error updating Depth config', error);
+          alert(`Error updating Depth: ${error.message}`);
+          this.isReconfiguring = false;
+        }
+      );
   }
 
-  updateDepthFrameRate(): void {
-    console.log('Updating Depth Frame Rate:', this.selectedDepthFrameRate);
-    this.sendConfigurationUpdate('depth', this.selectedDepthResolution, this.selectedDepthFrameRate);
+  // Called when updating RGB config
+  updateRGBConfig(event: { resolution: string; frameRate: string }) {
+    this.isReconfiguring = true; // show overlay
+    this.httpConfigService.updateConfiguration('rgb', event.resolution, event.frameRate)
+      .subscribe(
+        response => {
+          console.log('RGB config updated', response);
+          alert(`RGB Updated: ${event.resolution}@${event.frameRate}fps`);
+          this.webSocketService.startStream();
+          this.isReconfiguring = false; // hide overlay
+        },
+        error => {
+          console.error('Error updating RGB config', error);
+          alert(`Error updating RGB: ${error.message}`);
+          this.isReconfiguring = false; // hide overlay
+        }
+      );
   }
-
-  // Update RGB Module Configuration
-  updateRGBResolution(): void {
-    console.log('Updating RGB Resolution:', this.selectedRGBResolution);
-    this.sendConfigurationUpdate('rgb', this.selectedRGBResolution, this.selectedRGBFrameRate);
-  }
-
-  updateRGBFrameRate(): void {
-    console.log('Updating RGB Frame Rate:', this.selectedRGBFrameRate);
-    this.sendConfigurationUpdate('rgb', this.selectedRGBResolution, this.selectedRGBFrameRate);
-  }
-
   // Helper method to send configuration updates to the server
   private sendConfigurationUpdate(module: string, resolution: string, frameRate: string): void {
     this.httpConfigService.updateConfiguration(module, resolution, frameRate).subscribe(
@@ -108,44 +138,42 @@ export class CamViewerComponent implements OnInit {
       }
     );
   }
- // Method to update Depth Module Exposure
-  updateDepthExposure(): void {
-    console.log('Updating Depth Exposure:', this.depthExposureValue);
-    this.httpConfigService.updateExposure('depth', this.depthExposureValue).subscribe(
-      (response) => {
-        console.log('Depth Exposure Updated Successfully', response);
-      },
-      (error) => {
-        console.error('Error updating Depth Exposure', error);
-      }
+  updateDepthExposure(value: number) {
+    console.log('Updating Depth Exposure:', value);
+    this.httpConfigService.updateExposure('depth', value).subscribe(
+      response => console.log(response),
+      error => console.error(error)
     );
   }
 
-  // Method to update RGB Camera Exposure
-  updateRGBExposure(): void {
-    console.log('Updating RGB Exposure:', this.rgbExposureValue);
-    this.httpConfigService.updateExposure('rgb', this.rgbExposureValue).subscribe(
-      (response) => {
-        console.log('RGB Exposure Updated Successfully', response);
-      },
-      (error) => {
-        console.error('Error updating RGB Exposure', error);
-      }
+  updateRGBExposure(value: number) {
+    console.log('Updating RGB Exposure:', value);
+    this.httpConfigService.updateExposure('rgb', value).subscribe(
+      response => console.log(response),
+      error => console.error(error)
     );
   }
-  toggleDepthMetadata(): void {
-    this.depthMetadataEnabled = !this.depthMetadataEnabled;
+  // Called when depth metadata toggle changes
+  onDepthMetadataToggle(newValue: boolean) {
+    this.depthMetadataOn = newValue;
+    console.log('Depth Metadata toggled to:', newValue);
+
+    // Call server to toggle metadata
     this.httpConfigService.toggleMetadata('depth').subscribe(
-      response => console.log('Depth metadata toggled', response),
-      error => console.error(error)
+      (res) => console.log('[Depth Metadata]:', res),
+      (err) => console.error(err)
     );
   }
-  
-  toggleRGBMetadata(): void {
-    this.rgbMetadataEnabled = !this.rgbMetadataEnabled;
+
+  // Called when rgb metadata toggle changes
+  onRgbMetadataToggle(newValue: boolean) {
+    this.rgbMetadataOn = newValue;
+    console.log('RGB Metadata toggled to:', newValue);
+
+    // Call server to toggle metadata
     this.httpConfigService.toggleMetadata('rgb').subscribe(
-      response => console.log('RGB metadata toggled', response),
-      error => console.error(error)
+      (res) => console.log('[RGB Metadata]:', res),
+      (err) => console.error(err)
     );
   }
 }

@@ -1,0 +1,57 @@
+@import '../../styles/_variables.scss';
+
+.streaming-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: $dark-background;
+  color: $primary-text;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* If only one stream toggled, center it in single-stream layout */
+  &.single-stream {
+    flex-direction: column;
+  }
+
+  /* If two toggles are on, show them side by side */
+  &.double-stream {
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+  }
+
+  .placeholder-text {
+    font-size: 2rem;
+    font-weight: bold;
+    color: $secondary-text;
+    text-align: center;
+  }
+
+  .stream-box {
+    border: 1px solid #444;
+    background-color: #2f2f2f;
+    margin: 1rem;
+    padding: 1rem;
+    border-radius: 6px;
+
+    .stream-title {
+      color: $realsense-blue;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    img {
+      max-width: 90%;
+      border: 1px solid #555;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      text-align: center;
+      color: $secondary-text;
+    }
+  }
+}

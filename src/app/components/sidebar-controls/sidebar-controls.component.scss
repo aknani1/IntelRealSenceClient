@@ -1,0 +1,81 @@
+@import '../../styles/_variables.scss';
+.sidebar {
+    background: linear-gradient($dark-background, #2a2a2a); 
+    height: 100%;
+    padding: 1rem;
+    color: $primary-text;
+  
+    h3 {
+      color: $realsense-blue;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+  
+    .camera-info {
+      background-color: #2f2f2f;
+      padding: 0.5rem;
+      border: 1px solid #444;
+      margin-bottom: 1rem;
+  
+      p {
+        margin: 0.3rem 0;
+        color: $primary-text;
+        // If text is still not bright enough, use #ffffff
+      }
+    }
+  
+    .module-toggle {
+      margin-bottom: 1.5rem;
+  
+      mat-slide-toggle {
+        color: $primary-text !important;
+  
+        &.mat-checked {
+          .mat-slide-toggle-bar {
+            background-color: $realsense-blue !important;
+          }
+          .mat-slide-toggle-thumb {
+            background-color: $realsense-blue !important;
+          }
+        }
+      }
+  
+      .control-panel {
+        background-color: #2a2a2a;
+        border-left: 4px solid $realsense-blue;
+        padding: 0.5rem 1rem;
+        margin-top: 0.5rem;
+        mat-slide-toggle {
+            color: $primary-text;
+          }
+        h4 {
+          color: $realsense-blue;
+          margin-top: 0;
+        }
+  
+        p {
+          margin: 0.4rem 0;
+          color: $primary-text;
+        }
+  
+        input,
+        select {
+          color: $primary-text; 
+          background-color: #424242; 
+          border: 1px solid #555;
+        }
+  
+        input[type="range"] {
+          // range track & thumb
+          accent-color: $realsense-blue;
+        }
+
+      }
+    }
+  ::ng-deep .mat-mdc-slide-toggle .mdc-label {
+    color: $primary-text !important; // or #ffffff
+  }
+
+
+  }
+  

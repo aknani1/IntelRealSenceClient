@@ -1,0 +1,88 @@
+<div class="sidebar">
+    <h3>Camera Info</h3>
+    <div class="camera-info">
+      <p><strong>Name:</strong> {{ cameraName }}</p>
+      <p><strong>Serial:</strong> {{ cameraSerial }}</p>
+      <p><strong>Firmware:</strong> {{ cameraFirmware }}</p>
+      <p><strong>USB Type:</strong> {{ cameraUsb }}</p>
+    </div>
+    <h3>Modules</h3>
+  
+    <!-- DEPTH TOGGLE -->
+    <div class="module-toggle">
+      <mat-slide-toggle  
+        [(ngModel)]="depthModuleEnabled"
+        (ngModelChange)="onDepthToggle($event)">
+        Depth Module
+      </mat-slide-toggle>
+  
+      <!-- Depth Module Controls -->
+      <div *ngIf="depthModuleEnabled" class="control-panel">
+        <h4>Depth Module Controls</h4>
+        <!-- Resolution & Frame Rate -->
+        <p>Resolution:</p>
+        <select [(ngModel)]="selectedDepthResolution" (change)="onDepthResolutionChange()">
+          <option value="640x480">640x360</option>
+          <option value="1280x720">1280x720</option>
+        </select>
+  
+        <p>Frame Rate:</p>
+        <select [(ngModel)]="selectedDepthFrameRate" (change)="onDepthResolutionChange()">
+          <option value="15">15 FPS</option>
+          <option value="30">30 FPS</option>
+        </select>
+  
+        <p>Metadata:</p>
+        <mat-slide-toggle
+          [(ngModel)]="depthMetadataEnabled"
+          (ngModelChange)="onDepthMetadataToggle($event)">
+          Show Depth Metadata
+        </mat-slide-toggle>
+        
+        <p>Exposure:</p>
+        <input type="range" min="0" max="1000" step="50"
+               [(ngModel)]="depthExposureValue"
+               (change)="onDepthExposureChange()" />
+        {{ depthExposureValue }}
+      </div>
+    </div>
+  
+    <!-- RGB TOGGLE -->
+    <div class="module-toggle">
+      <mat-slide-toggle
+        [(ngModel)]="rgbCameraEnabled"
+        (ngModelChange)="onRgbToggle($event)">
+        RGB Camera
+      </mat-slide-toggle>
+  
+      <!-- RGB Camera Controls -->
+      <div *ngIf="rgbCameraEnabled" class="control-panel">
+        <h4>RGB Camera Controls</h4>
+        <p>Resolution:</p>
+        <select [(ngModel)]="selectedRGBResolution" (change)="onRgbResolutionChange()">
+          <option value="640x480">640x360</option>
+          <option value="1280x720">1280x720</option>
+        </select>
+  
+        <p>Frame Rate:</p>
+        <select [(ngModel)]="selectedRGBFrameRate" (change)="onRgbResolutionChange()">
+          <option value="15">15 FPS</option>
+          <option value="30">30 FPS</option>
+        </select>
+  
+        <p>Metadata:</p>
+        <mat-slide-toggle
+          [(ngModel)]="rgbMetadataEnabled"
+          (ngModelChange)="onRgbMetadataToggle($event)">
+          Show RGB Metadata
+        </mat-slide-toggle>
+  
+        <p>Exposure:</p>
+        <input type="range" min="0" max="1000" step="50"
+               [(ngModel)]="rgbExposureValue"
+               (change)="onRgbExposureChange()" />
+        {{ rgbExposureValue }}
+      </div>
+    </div>
+  </div>
+  
