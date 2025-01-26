@@ -1,11 +1,20 @@
 <div class="sidebar">
-    <h3>Camera Info</h3>
-    <div class="camera-info">
+    <div class="camera-info-container">
+    <mat-expansion-panel>
+    <mat-expansion-panel-header>
+        <mat-panel-title>
+          Camera Info
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+          <div class="camera-info">
       <p><strong>Name:</strong> {{ cameraName }}</p>
       <p><strong>Serial:</strong> {{ cameraSerial }}</p>
       <p><strong>Firmware:</strong> {{ cameraFirmware }}</p>
       <p><strong>USB Type:</strong> {{ cameraUsb }}</p>
     </div>
+</mat-expansion-panel>
+<div>
+    
     <h3>Modules</h3>
   
     <!-- DEPTH TOGGLE -->

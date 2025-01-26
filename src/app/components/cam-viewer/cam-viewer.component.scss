@@ -1,42 +1,43 @@
 @import '../../styles/_variables.scss';
 
-
 :host {
   /* Force the host component to stretch to full height */
   display: block;
   height: 100%;
 }
 
-
 .viewer-container {
+  /* Fill the parent (app-main) entirely */
   width: 100%;
   height: 100%;
-  background-color: $dark-background; // or #2f2f2f
-
-  ::ng-deep mat-sidenav {
-    width: 200px !important; /* or any width you like */
-    background: linear-gradient($dark-background, #2a2a2a);
-    color: $primary-text;
-  }
+  overflow: hidden; /* no scrollbars on the container */
 }
 
-mat-sidenav-content {
-  height: 100%;
+::ng-deep mat-sidenav {
+  /* Fix the sidebar width & remove overflow */
+  width: 220px !important; 
+  max-height: 100%;
+  overflow: hidden; 
+  background: linear-gradient($dark-background, #2a2a2a);
+  color: $primary-text;
+}
+
+::ng-deep mat-sidenav-content {
+  /* Remainder of space goes to content */
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  
-}
-/* mat-sidenav-container and mat-sidenav-content
-   are already set to 100% in global CSS, so no
-   partial coverage or white space. */
-
-.sidenav-container {
-  width: 90%;
   height: 100%;
+  overflow: hidden; 
+  position: relative; 
 }
+
 .overlay {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: $primary-text;
-  /* More styling as needed */
+  /* additional styling */
 }
