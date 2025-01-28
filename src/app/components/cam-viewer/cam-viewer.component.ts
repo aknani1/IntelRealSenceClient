@@ -14,6 +14,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTableModule } from '@angular/material/table';
+
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from '../../app-routing.module';
 
@@ -34,6 +36,7 @@ import { AppRoutingModule } from '../../app-routing.module';
       MatInputModule,
       MatSelectModule,
       MatButtonModule,
+      MatToolbarModule
       ]
 })
 export class CamViewerComponent implements OnInit {
@@ -41,6 +44,9 @@ export class CamViewerComponent implements OnInit {
   showDepth = false;
   showRGB = false;
 
+
+
+  sidePanelOpen = true;
   isReconfiguring = false;
   public rgbMetadataLines: string[] = [];
   public depthMetadataLines: string[] = [];
@@ -184,4 +190,8 @@ export class CamViewerComponent implements OnInit {
       (err) => console.error(err)
     );
   }
+  toggleSidePanel() {
+    this.sidePanelOpen = !this.sidePanelOpen;
+  }
+
 }

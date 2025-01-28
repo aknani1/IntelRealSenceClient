@@ -1,6 +1,13 @@
+<!-- cam-viewer.component.html -->
 <mat-sidenav-container class="viewer-container">
-  <!-- Sidebar -->
-  <mat-sidenav mode="side" opened>
+  
+  <!-- The Sidenav on the left -->
+  <mat-sidenav #sidenav 
+               mode="side" 
+               position="start" 
+               [(opened)]="sidePanelOpen" 
+               class="control-sidenav">
+    <!-- Put your existing sidebar controls inside -->
     <app-sidebar-controls
       (depthToggleChange)="onDepthToggle($event)"
       (rgbToggleChange)="onRgbToggle($event)"
@@ -9,27 +16,40 @@
       (depthExposureChange)="updateDepthExposure($event)"
       (rgbExposureChange)="updateRGBExposure($event)"
       (depthMetadataToggle)="onDepthMetadataToggle($event)"
-      (rgbMetadataToggle)="onRgbMetadataToggle($event)"
-    >
+      (rgbMetadataToggle)="onRgbMetadataToggle($event)">
     </app-sidebar-controls>
   </mat-sidenav>
 
-  <!-- Streaming Container -->
+  <!-- Main Content: includes a top toolbar + the streams -->
   <mat-sidenav-content>
-    <app-cam-streams
-    [showDepth]="showDepth"
-    [showRGB]="showRGB"
-    [depthImageUrl]="depthImageUrl"
-    [colorImageUrl]="colorImageUrl"
-    [depthMetadataLines]="depthMetadataLines"
-    [rgbMetadataLines]="rgbMetadataLines"
-  ></app-cam-streams>
-        <!-- Reconfiguring Overlay -->
-        <div class="overlay" *ngIf="isReconfiguring">
-          <div class="overlay-content">
-            <mat-icon class="spinner">autorenew</mat-icon>
-            <p>Reconfiguring. Please wait...</p>
-          </div>
+    
+    <!-- Top toolbar with a "hamburger" icon to toggle the sidenav -->
+    <mat-toolbar color="primary" class="top-toolbar">
+      <button mat-icon-button (click)="sidenav.toggle()">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="toolbar-title">control-panel</span>
+    </mat-toolbar>
+
+    <!-- The streaming area (cam-streams) -->
+    <div class="content-area">
+      <app-cam-streams
+        [showDepth]="showDepth"
+        [showRGB]="showRGB"
+        [depthImageUrl]="depthImageUrl"
+        [colorImageUrl]="colorImageUrl"
+        [depthMetadataLines]="depthMetadataLines"
+        [rgbMetadataLines]="rgbMetadataLines">
+      </app-cam-streams>
+
+      <!-- Reconfiguring overlay -->
+      <div class="overlay" *ngIf="isReconfiguring">
+        <div class="overlay-content">
+          <mat-icon class="spinner">autorenew</mat-icon>
+          <p>Reconfiguring. Please wait...</p>
         </div>
+      </div>
+    </div> <!-- end content-area -->
+
   </mat-sidenav-content>
 </mat-sidenav-container>

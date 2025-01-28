@@ -22,9 +22,9 @@
       <mat-slide-toggle  
         [(ngModel)]="depthModuleEnabled"
         (ngModelChange)="onDepthToggle($event)">
-        Depth Module
       </mat-slide-toggle>
-  
+      Depth Module
+
       <!-- Depth Module Controls -->
       <div *ngIf="depthModuleEnabled" class="control-panel">
         <h4>Depth Module Controls</h4>
@@ -45,9 +45,9 @@
         <mat-slide-toggle
           [(ngModel)]="depthMetadataEnabled"
           (ngModelChange)="onDepthMetadataToggle($event)">
-          Show Depth Metadata
         </mat-slide-toggle>
-        
+        Show Depth Metadata
+
         <p>Exposure:</p>
         <input type="range" min="0" max="1000" step="50"
                [(ngModel)]="depthExposureValue"
@@ -61,9 +61,9 @@
       <mat-slide-toggle
         [(ngModel)]="rgbCameraEnabled"
         (ngModelChange)="onRgbToggle($event)">
-        RGB Camera
       </mat-slide-toggle>
-  
+      RGB Camera
+
       <!-- RGB Camera Controls -->
       <div *ngIf="rgbCameraEnabled" class="control-panel">
         <h4>RGB Camera Controls</h4>
@@ -83,9 +83,9 @@
         <mat-slide-toggle
           [(ngModel)]="rgbMetadataEnabled"
           (ngModelChange)="onRgbMetadataToggle($event)">
-          Show RGB Metadata
         </mat-slide-toggle>
-  
+        Show RGB Metadata
+
         <p>Exposure:</p>
         <input type="range" min="0" max="1000" step="50"
                [(ngModel)]="rgbExposureValue"
