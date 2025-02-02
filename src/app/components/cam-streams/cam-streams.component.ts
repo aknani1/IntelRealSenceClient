@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, SimpleChanges } from '@angular/core';
+import { MatSpinner } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-cam-streams',
@@ -8,7 +9,7 @@ import { Component, Input } from '@angular/core';
   standalone: true,
   imports: [
     CommonModule,
-    // plus anything else you need
+    MatSpinner
   ]
 })
 export class CamStreamsComponent {
@@ -19,4 +20,24 @@ export class CamStreamsComponent {
   @Input() colorImageUrl: string | null = null;
   @Input() depthMetadataLines: string[] = [];
   @Input() rgbMetadataLines: string[] = [];
+
+  depthImageLoaded = false;
+  colorImageLoaded = false;
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['depthImageUrl']) {
+      this.depthImageLoaded = false;
+    }
+    if (changes['colorImageUrl']) {
+      this.colorImageLoaded = false;
+    }
+  }
+
+  onDepthImgLoad() {
+    this.depthImageLoaded = true;
+  }
+
+  onColorImgLoad() {
+    this.colorImageLoaded = true;
+  }
 }

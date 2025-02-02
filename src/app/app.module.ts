@@ -20,6 +20,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { CamViewerComponent } from './components/cam-viewer/cam-viewer.component';
 import { SidebarControlsComponent } from './components/sidebar-controls/sidebar-controls.component';
 import { CamStreamsComponent } from './components/cam-streams/cam-streams.component';
+import { ConnectionStatusComponent } from './components/connection-status/connection-status.component';
 
 @NgModule({
   // Put all non-standalone components here
@@ -40,7 +41,8 @@ import { CamStreamsComponent } from './components/cam-streams/cam-streams.compon
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    CamViewerComponent
+    CamViewerComponent,
+    ConnectionStatusComponent
     ],
   providers: [
     provideHttpClient()

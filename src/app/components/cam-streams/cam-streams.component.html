@@ -1,9 +1,11 @@
-  <div
-    class="streaming-container"
-    [class.single-stream]="(showDepth && !showRGB) || (!showDepth && showRGB)"
-    [class.double-stream]="showDepth && showRGB"
-  >
-    <!-- If both toggles are off, show placeholder -->
+<!-- File: cam-streams.component.html -->
+<div class="streaming-area">
+  <!-- Main container controlling single vs double stream layout -->
+  <div class="streaming-container"
+       [class.single-stream]="(showDepth && !showRGB) || (!showDepth && showRGB)"
+       [class.double-stream]="showDepth && showRGB">
+    
+    <!-- If nothing is toggled, show placeholder -->
     <div *ngIf="!showDepth && !showRGB" class="placeholder-text">
       Nothing to stream!
     </div>
@@ -12,12 +14,24 @@
     <div *ngIf="showDepth" class="stream-box">
       <h3 class="stream-title">Depth Stream</h3>
       <div class="img-container">
-        <img [src]="depthImageUrl" alt="Depth Stream" />
-        <div class="metadata-overlay" *ngIf="depthMetadataLines.length > 0">
-          <ul>
-            <li *ngFor="let line of depthMetadataLines">{{ line }}</li>
-          </ul>
-        </div>
+        <ng-container *ngIf="depthImageUrl; else noDepthStream">
+          <div class="stream-loading" *ngIf="!depthImageLoaded">
+            <mat-spinner diameter="32"></mat-spinner>
+          </div>
+          <img
+          [src]="depthImageUrl"
+          alt="Depth Stream"
+          (load)="onDepthImgLoad()"  
+        />      
+            <div class="metadata-overlay" *ngIf="depthMetadataLines.length > 0">
+            <ul>
+              <li *ngFor="let line of depthMetadataLines">{{ line }}</li>
+            </ul>
+          </div>
+        </ng-container>
+        <ng-template #noDepthStream>
+          <div class="no-stream-center">No depth stream available</div>
+        </ng-template>
       </div>
     </div>
 
@@ -25,12 +39,26 @@
     <div *ngIf="showRGB" class="stream-box">
       <h3 class="stream-title">RGB Stream</h3>
       <div class="img-container">
-        <img [src]="colorImageUrl" alt="RGB Stream" />
-        <div class="metadata-overlay" *ngIf="rgbMetadataLines.length > 0">
-          <ul>
-            <li *ngFor="let line of rgbMetadataLines">{{ line }}</li>
-          </ul>
-        </div>
+        <ng-container *ngIf="colorImageUrl; else noRgbStream">
+          <div class="stream-loading" *ngIf="!colorImageLoaded">
+            <mat-spinner diameter="32"></mat-spinner>
+          </div>
+          <img
+          [src]="colorImageUrl"
+          alt="RGB Stream"
+          (load)="onColorImgLoad()"  
+        />    
+            <div class="metadata-overlay" *ngIf="rgbMetadataLines.length > 0">
+            <ul>
+              <li *ngFor="let line of rgbMetadataLines">{{ line }}</li>
+            </ul>
+          </div>
+        </ng-container>
+        <ng-template #noRgbStream>
+          <div class="no-stream-center">No RGB stream available</div>
+        </ng-template>
       </div>
     </div>
+
   </div>
+</div>

@@ -1,37 +1,41 @@
-<!-- cam-viewer.component.html -->
+<!-- File: cam-viewer.component.html -->
+<app-connection-status></app-connection-status>
 <mat-sidenav-container class="viewer-container">
-  
-  <!-- The Sidenav on the left -->
-  <mat-sidenav #sidenav 
-               mode="side" 
-               position="start" 
-               [(opened)]="sidePanelOpen" 
+  <mat-sidenav #sidenav
+               mode="side"
+               position="start"
+               [(opened)]="sidePanelOpen"
                class="control-sidenav">
-    <!-- Put your existing sidebar controls inside -->
-    <app-sidebar-controls
-      (depthToggleChange)="onDepthToggle($event)"
-      (rgbToggleChange)="onRgbToggle($event)"
-      (depthResolutionChange)="updateDepthConfig($event)"
-      (rgbResolutionChange)="updateRGBConfig($event)"
-      (depthExposureChange)="updateDepthExposure($event)"
-      (rgbExposureChange)="updateRGBExposure($event)"
-      (depthMetadataToggle)="onDepthMetadataToggle($event)"
-      (rgbMetadataToggle)="onRgbMetadataToggle($event)">
-    </app-sidebar-controls>
+
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <img src="../assets/realsense-logo.png" alt="Intel RealSense" class="sidebar-logo">
+    </div>
+
+    <!-- Sidebar Content -->
+    <div class="sidebar-content">
+      <app-sidebar-controls
+        (depthToggleChange)="onDepthToggle($event)"
+        (rgbToggleChange)="onRgbToggle($event)"
+        (depthResolutionChange)="updateDepthConfig($event)"
+        (rgbResolutionChange)="updateRGBConfig($event)"
+        (depthExposureChange)="updateDepthExposure($event)"
+        (rgbExposureChange)="updateRGBExposure($event)"
+        (depthMetadataToggle)="onDepthMetadataToggle($event)"
+        (rgbMetadataToggle)="onRgbMetadataToggle($event)">
+      </app-sidebar-controls>
+    </div>
   </mat-sidenav>
 
-  <!-- Main Content: includes a top toolbar + the streams -->
+  <!-- Main content area -->
   <mat-sidenav-content>
-    
-    <!-- Top toolbar with a "hamburger" icon to toggle the sidenav -->
-    <mat-toolbar color="primary" class="top-toolbar">
-      <button mat-icon-button (click)="sidenav.toggle()">
-        <mat-icon>menu</mat-icon>
+    <div class="persistent-header">
+      <button mat-icon-button class="sidebar-toggle" (click)="sidenav.toggle()">
+        <mat-icon>{{ sidePanelOpen ? 'chevron_left' : 'menu' }}</mat-icon>
       </button>
-      <span class="toolbar-title">control-panel</span>
-    </mat-toolbar>
+      <span class="header-title">Intel RealSense Viewer</span>
+    </div>
 
-    <!-- The streaming area (cam-streams) -->
     <div class="content-area">
       <app-cam-streams
         [showDepth]="showDepth"
@@ -42,14 +46,13 @@
         [rgbMetadataLines]="rgbMetadataLines">
       </app-cam-streams>
 
-      <!-- Reconfiguring overlay -->
+      <!-- Overlay while reconfiguring -->
       <div class="overlay" *ngIf="isReconfiguring">
         <div class="overlay-content">
           <mat-icon class="spinner">autorenew</mat-icon>
           <p>Reconfiguring. Please wait...</p>
         </div>
       </div>
-    </div> <!-- end content-area -->
-
+    </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

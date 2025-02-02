@@ -14,6 +14,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from '../../app-routing.module';
 import { CamViewerComponent } from '../cam-viewer/cam-viewer.component';
 import { HttpConfigService } from '../../services/http-config.service';
+import { WebSocketService } from '../../services/web-socket.service';
 
 @Component({
   selector: 'app-sidebar-controls',
@@ -45,9 +46,9 @@ export class SidebarControlsComponent implements OnInit {
   rgbMetadataEnabled = false;
 
   // Resolutions
-  selectedDepthResolution = '640x480';
+  selectedDepthResolution = '640x360';
   selectedDepthFrameRate = '30';
-  selectedRGBResolution = '640x480';
+  selectedRGBResolution = '640x360';
   selectedRGBFrameRate = '30';
 
   // Exposures
@@ -71,13 +72,36 @@ export class SidebarControlsComponent implements OnInit {
   // NEW events for metadata
   @Output() depthMetadataToggle = new EventEmitter<boolean>();
   @Output() rgbMetadataToggle   = new EventEmitter<boolean>();
-  constructor(private httpConfigService: HttpConfigService) {}
+  constructor(
+    private httpConfigService: HttpConfigService,  private webSocketService: WebSocketService
+  ) {}
 
   ngOnInit() {
     this.loadCameraInfo();
+    this.loadDefaultsFromServer();
+
   }
 
-
+  private loadDefaultsFromServer() {
+    this.httpConfigService.getDefaults().subscribe({
+      next: (defaults) => {
+        // E.g., store them in a local variable if needed
+        // Or you can set your UI to these defaults immediately
+        console.log('[SidebarControls] Received defaults:', defaults);
+  
+        this.selectedDepthResolution = `${defaults.depth.width}x${defaults.depth.height}`;
+        this.selectedDepthFrameRate  = defaults.depth.fps.toString();
+        this.selectedRGBResolution   = `${defaults.color.width}x${defaults.color.height}`;
+        this.selectedRGBFrameRate    = defaults.color.fps.toString();
+  
+        this.depthExposureValue = defaults.depth.exposure;
+        this.rgbExposureValue   = defaults.color.exposure;
+  
+        // ...any other UI toggles you want to set...
+      },
+      error: err => console.error('Error loading defaults:', err)
+    });
+  }
   private loadCameraInfo() {
     this.httpConfigService.getCameraInfo().subscribe({
       next: (info) => {
@@ -116,15 +140,18 @@ export class SidebarControlsComponent implements OnInit {
   }
 
   onDepthMetadataToggle(newValue: boolean) {
-    console.log('Depth Metadata toggled to:', newValue);
-    this.depthMetadataToggle.emit(newValue);
+    this.httpConfigService.setMetadata('depth', newValue).subscribe({
+      next: () => this.depthMetadataToggle.emit(newValue),
+      error: (err) => console.error('Failed to set depth metadata', err)
+    });
   }
 
   onRgbMetadataToggle(newValue: boolean) {
-    console.log('RGB Metadata toggled to:', newValue);
-    this.rgbMetadataToggle.emit(newValue);
+    this.httpConfigService.setMetadata('rgb', newValue).subscribe({
+      next: () => this.rgbMetadataToggle.emit(newValue),
+      error: (err) => console.error('Failed to set RGB metadata', err)
+    });
   }
-
 
   // Depth resolution/fps
   onDepthResolutionChange() {
@@ -151,4 +178,37 @@ export class SidebarControlsComponent implements OnInit {
   onRgbExposureChange() {
     this.rgbExposureChange.emit(this.rgbExposureValue);
   }
+
+// sidebar-controls.component.ts (excerpt)
+// Update onHardReset() method
+// Update onHardReset
+onHardReset() {
+  if (!confirm('Hard reset will restore all defaults. Continue?')) return;
+
+  // Force full disconnection
+  // this.webSocketService.forceDisconnect();
+  // this.httpConfigService.setMetadata('depth', false).subscribe();
+  // this.httpConfigService.setMetadata('rgb', false).subscribe();
+  // Reset all UI components
+  this.depthModuleEnabled = false;
+  this.rgbCameraEnabled = false;
+  this.depthMetadataEnabled = false;
+  this.rgbMetadataEnabled = false;
+
+  // Emit changes
+  this.depthToggleChange.emit(false);
+  this.rgbToggleChange.emit(false);
+  this.depthMetadataToggle.emit(false);
+  this.rgbMetadataToggle.emit(false);
+
+  // Server-side reset with delay
+    this.httpConfigService.hardReset().subscribe({
+      next: () => {
+        this.loadDefaultsFromServer();
+        this.webSocketService.startStream();
+      },
+      error: (err) => console.error('Hard reset failed:', err)
+    });
+}
+
 }

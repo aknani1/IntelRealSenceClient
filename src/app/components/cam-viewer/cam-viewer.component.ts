@@ -1,4 +1,3 @@
-// cam-viewer.component.ts
 import { Component, OnInit } from '@angular/core';
 import { WebSocketService } from '../../services/web-socket.service';
 import { HttpConfigService } from '../../services/http-config.service';
@@ -18,13 +17,15 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from '../../app-routing.module';
+import { ConnectionStatusComponent } from '../connection-status/connection-status.component';
+import { distinctUntilChanged, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-cam-viewer',
   templateUrl: './cam-viewer.component.html',
   styleUrls: ['./cam-viewer.component.scss'],
   standalone: true,
-  imports: [SidebarControlsComponent,CamStreamsComponent,    BrowserModule,
+  imports: [SidebarControlsComponent,CamStreamsComponent,ConnectionStatusComponent,    BrowserModule,
       AppRoutingModule,
       MatSlideToggleModule,
       BrowserAnimationsModule,
@@ -36,7 +37,7 @@ import { AppRoutingModule } from '../../app-routing.module';
       MatInputModule,
       MatSelectModule,
       MatButtonModule,
-      MatToolbarModule
+      MatToolbarModule,
       ]
 })
 export class CamViewerComponent implements OnInit {
@@ -56,88 +57,119 @@ export class CamViewerComponent implements OnInit {
   // Local copies of metadata booleans
   depthMetadataOn = false;
   rgbMetadataOn = false;
+  private activeSubscriptions = new Subscription();
+  private connectionSub: Subscription | null = null;
+
   constructor(
     private webSocketService: WebSocketService,
     private httpConfigService: HttpConfigService
   ) {}
+ngOnInit(): void {
+  this.connectionSub = this.webSocketService.getConnectionStatus().pipe(
+    distinctUntilChanged()
+  ).subscribe(connected => {
+    if (connected) {
+      this.startStreaming();
+      this.webSocketService.startStream(); // Add this line
+    } else {
+      this.stopStreaming();
+      this.resetUIState();
+    }
+  });
+}
+ngOnDestroy() {
+  this.connectionSub?.unsubscribe();
+  this.activeSubscriptions.unsubscribe();
+}
 
-  ngOnInit(): void {
-    // Start streaming
-    this.webSocketService.startStream();
-
-    // Subscribe to incoming frames
-    this.webSocketService.getVideoStream().subscribe(frame => {
-      // Show images if toggles are on
-      if (this.showRGB) {
-        this.colorImageUrl = 'data:image/jpeg;base64,' + frame.color;
-      } else {
-        this.colorImageUrl = '';
-      }
-    
-      if (this.showDepth) {
-        this.depthImageUrl = 'data:image/jpeg;base64,' + frame.depth;
-      } else {
-        this.depthImageUrl = '';
-      }
-    
-      // If metadata is present, store it
-      if (frame.metadata) {
-        this.rgbMetadataLines = frame.metadata.rgb || [];
-        this.depthMetadataLines = frame.metadata.depth || [];
+  private startStreaming() {
+    const videoSubscription = this.webSocketService.getVideoStream().subscribe({
+      next: frame => {
+        // Clear previous metadata if streams are off
+        this.rgbMetadataLines = frame.metadata?.rgb || [];
+        this.depthMetadataLines = frame.metadata?.depth || [];
+        
+        // Update frames and metadata
+        if (this.showRGB) {
+          this.colorImageUrl = 'data:image/jpeg;base64,' + frame.color;
+          this.rgbMetadataLines = frame.metadata?.rgb || [];
+        }
+        if (this.showDepth) {
+          this.depthImageUrl = 'data:image/jpeg;base64,' + frame.depth;
+          this.depthMetadataLines = frame.metadata?.depth || [];
+        }
       }
     });
+    
+    // Store subscription to clean up later
+    this.activeSubscriptions.add(videoSubscription);
   }
-
-  // Called when depth toggle changes
+  private stopStreaming() {
+    this.activeSubscriptions.unsubscribe();
+    this.activeSubscriptions = new Subscription();
+    
+    this.depthImageUrl = '';
+    this.colorImageUrl = '';
+    this.rgbMetadataLines = [];
+    this.depthMetadataLines = [];
+    this.showDepth = false;
+    this.showRGB = false;
+  }
+  private resetUIState() {
+    this.depthMetadataOn = false;
+    this.rgbMetadataOn = false;
+    this.isReconfiguring = false;
+  }
+  // Toggling the depth module on/off should NOT trigger reconfig overlay
   onDepthToggle(newValue: boolean) {
     this.showDepth = newValue;
     console.log('Depth Module:', newValue ? 'Enabled' : 'Disabled');
   }
 
-
+  // Toggling the RGB module on/off should NOT trigger reconfig overlay
   onRgbToggle(newValue: boolean) {
     this.showRGB = newValue;
     console.log('RGB Module:', newValue ? 'Enabled' : 'Disabled');
   }
 
-
-  // Called when updating Depth config
+  // Update Depth configuration: this is an actual reconfig → show overlay
   updateDepthConfig(event: { resolution: string; frameRate: string }) {
     this.isReconfiguring = true;
+
     this.httpConfigService.updateConfiguration('depth', event.resolution, event.frameRate)
-      .subscribe(
-        response => {
-          console.log('Depth config updated', response);
-          alert(`Depth Updated: ${event.resolution}@${event.frameRate}fps`);
+      .subscribe({
+        next: () => {
+          // Optionally restart the stream
           this.webSocketService.startStream();
-          this.isReconfiguring = false;
+
+          // Give the pipeline a second to restart, then hide overlay
+          setTimeout(() => { this.isReconfiguring = false; }, 1000);
         },
-        error => {
-          console.error('Error updating Depth config', error);
-          alert(`Error updating Depth: ${error.message}`);
+        error: error => {
           this.isReconfiguring = false;
+          console.error('Error updating Depth config', error);
         }
-      );
+      });
   }
 
-  // Called when updating RGB config
+  // Update RGB configuration: this is an actual reconfig → show overlay
   updateRGBConfig(event: { resolution: string; frameRate: string }) {
-    this.isReconfiguring = true; // show overlay
+    this.isReconfiguring = true;
+
     this.httpConfigService.updateConfiguration('rgb', event.resolution, event.frameRate)
-      .subscribe(
-        response => {
-          console.log('RGB config updated', response);
-          alert(`RGB Updated: ${event.resolution}@${event.frameRate}fps`);
+      .subscribe({
+        next: () => {
           this.webSocketService.startStream();
-          this.isReconfiguring = false; // hide overlay
+          // Hide overlay
+          this.isReconfiguring = false;
         },
-        error => {
+        error: error => {
+          this.isReconfiguring = false;
           console.error('Error updating RGB config', error);
-          alert(`Error updating RGB: ${error.message}`);
-          this.isReconfiguring = false; // hide overlay
         }
-      );
+      });
   }
+
   // Helper method to send configuration updates to the server
   private sendConfigurationUpdate(module: string, resolution: string, frameRate: string): void {
     this.httpConfigService.updateConfiguration(module, resolution, frameRate).subscribe(
@@ -171,27 +203,26 @@ export class CamViewerComponent implements OnInit {
   onDepthMetadataToggle(newValue: boolean) {
     this.depthMetadataOn = newValue;
     console.log('Depth Metadata toggled to:', newValue);
+    if (!newValue) this.depthMetadataLines = [];
 
-    // Call server to toggle metadata
-    this.httpConfigService.toggleMetadata('depth').subscribe(
-      (res) => console.log('[Depth Metadata]:', res),
-      (err) => console.error(err)
-    );
   }
 
   // Called when rgb metadata toggle changes
   onRgbMetadataToggle(newValue: boolean) {
     this.rgbMetadataOn = newValue;
     console.log('RGB Metadata toggled to:', newValue);
-
     // Call server to toggle metadata
-    this.httpConfigService.toggleMetadata('rgb').subscribe(
-      (res) => console.log('[RGB Metadata]:', res),
-      (err) => console.error(err)
-    );
+    if (!newValue) this.rgbMetadataLines = [];
   }
   toggleSidePanel() {
     this.sidePanelOpen = !this.sidePanelOpen;
   }
+  stopStreamingServerSide() {
+    // Tell server to stop streaming for this app
+    this.webSocketService.stopStreamServerSide();
+    
+    // Then also unsubscribe locally
 
+  }
 }
+

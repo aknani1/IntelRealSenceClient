@@ -1,83 +1,396 @@
 @import '../../styles/_variables.scss';
+.streaming-area {
+  width: 100%;
+  height: calc(100vh - 64px); // Account for header
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  position: relative;
+  background: linear-gradient(45deg, $darkest-background, darken($darkest-background, 2%));
+}
 
 .streaming-container {
-  /* Fill available space so it centers within the parent (which should be flex as well) */
-  flex: 1 1 auto;
+  position: relative; // Add this for absolute positioning context
+  height: 100%; // Ensure full height
+ // When empty state is shown
+ &:has(.placeholder-text) {
+  border: 1px solid rgba($realsense-blue, 0.1);
+  background-image: 
+    linear-gradient(
+      45deg,
+      rgba($realsense-blue, 0.03) 25%,
+      transparent 25%,
+      transparent 75%,
+      rgba($realsense-blue, 0.03) 75%
+    ),
+    linear-gradient(
+      45deg,
+      rgba($realsense-blue, 0.03) 25%,
+      transparent 25%,
+      transparent 75%,
+      rgba($realsense-blue, 0.03) 75%
+    );
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+}
+  
+  &.single-stream {
+    .stream-box {
+      flex: 1 1 60%;
+      max-width: 90%;
+      height: 90%;
+    }
+  }
+  
+  &.double-stream {
+    .stream-box {
+      height: 90%;
+      max-width: calc(50% - 1rem);
+    }
+  }
+}
+
+.stream-box {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid rgba($realsense-blue, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    border-color: rgba($realsense-blue, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .stream-title {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    background: rgba($darkest-background, 0.7);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+    color: $primary-text
+  }
+}
+
+.img-container {
   width: 100%;
   height: 100%;
-  padding: 1rem;
-  box-sizing: border-box;
+  background: $darkest-background !important;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: crisp-edges;
+  }
+}
 
-  /* Flex container to center its children (including the placeholder text) */
+.placeholder-text {
+  font-size: 2.5rem; // Increased from 2rem
+  font-weight: 300; // Lighter weight for modern look
+  color: rgba($primary-text, 0.7); // Use primary text with opacity
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  gap: 1.5rem;
+  animation: fadeIn 0.3s ease-out;
+  
+  // Add an icon/emoji above the text
+  &:before {
+    content: '🎥';
+    font-size: 4rem;
+    filter: grayscale(30%);
+    opacity: 0.6;
+  }
+
+  // Optional animation
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+.metadata-overlay {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba($darkest-background, 0.8) !important;
+  backdrop-filter: blur(4px);
+  padding: 0.8rem 1rem !important;
+  border-radius: 6px;
+  max-width: 300px;
+  font-family: 'Roboto Mono', monospace;
+  
+  ul {
+    li {
+      font-size: 0.75rem;
+      line-height: 1.4;
+      padding: 2px 0;
+      color: lighten($secondary-text, 10%);
+      
+      &:not(:last-child) {
+        border-bottom: 1px solid rgba($realsense-blue, 0.1);
+      }
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .streaming-container {
+    &.double-stream {
+      flex-direction: column;
+      
+      .stream-box {
+        max-width: 100%;
+        height: 48%;
+      }
+    }
+  }
+  
+  .metadata-overlay {
+    max-width: 200px;
+    font-size: 0.7rem;
+  }
+}
+.stream-loading {
+  position: absolute;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba($darkest-background, 0.8);
+  z-index: 2;
+}
 
-  background-color: $dark-background;
-  color: $primary-text;
 
-  /* Behavior for single or dual streams remains the same */
-  &.single-stream {
-    flex-direction: column;
-  }
-  &.double-stream {
-    flex-direction: row;
-    justify-content: space-evenly;
+.no-stream-center {
+  color: rgba($primary-text, 0.6) !important;
+  font-size: 1.4rem;
+  font-weight: 300;
+  padding: 2rem;
+  align-items: center;
+  &:before {
+    content: '';
     align-items: center;
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.7;
   }
+}
 
-  /* Centered placeholder text for when no modules are active */
-  .placeholder-text {
-    font-size: 2rem;
-    font-weight: bold;
-    color: $secondary-text;
-    text-align: center;
-  }
 
-  /* Each stream's outer container */
-  .stream-box {
-    margin: 1rem;
-    padding: 1rem;
-    border-radius: 6px;
-    background-color: #2f2f2f;
-    border: 1px solid #444;
-
-    .stream-title {
-      color: $realsense-blue;
-      text-align: center;
-      margin-bottom: 0.5rem;
-    }
-
-    .img-container {
-      position: relative;
+.streaming-container {
+  &.double-stream {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    padding: 1.5rem;
+    
+    .stream-box {
       max-width: 100%;
-      max-height: 100%;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-
-      img {
-        max-width: 90%;
-        max-height: 60vh; /* Prevents the image from overflowing vertically */
-        border: 1px solid #555;
-        object-fit: contain;
-        margin: 1rem;
-      }
-
-      .metadata-overlay {
-        position: absolute;
-        top: 1rem;
-        left: 1.4rem;
-        background-color: rgba(60, 60, 60, 0.6);
-        color: $primary-text;
-        font-size: 0.9rem;
-        ul {
-          list-style: none;
-          margin: 0;
-          padding: 0;
+      height: 100%;
+      margin: 0;
+      aspect-ratio: 16/9; // Maintain camera aspect ratio
+      
+      .img-container {
+        height: 100%;
+        
+        img {
+          object-fit: cover; // Fill container while maintaining aspect ratio
         }
       }
+    }
+  }
+}
+.stream-box {
+  border: 1px solid rgba($realsense-blue, 0.15);
+  background: linear-gradient(145deg, #1a1a1a, #151515);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 16px rgba(0, 159, 222, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+}
+
+.img-container {
+  position: relative;
+  aspect-ratio: 16/9;
+  background: #000 !important;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+
+
+.placeholder-text {
+  font-size: 1.5rem;
+  color: rgba($primary-text, 0.4);
+  position: relative;
+  
+  &:before {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 80px;
+    background: url('../assets/waveform.svg') no-repeat center;
+    opacity: 0.2;
+    margin-bottom: 1rem;
+  }
+  
+  &:after {
+    content: 'Select streams from the control panel';
+    display: block;
+    font-size: 1rem;
+    color: rgba($primary-text, 0.3);
+    margin-top: 0.5rem;
+  }
+}
+
+.stream-status {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  
+  .status-led {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba($primary-text, 0.2);
+    transition: all 0.3s ease;
+    
+    &.active {
+      background: $realsense-blue;
+      box-shadow: 0 0 8px rgba($realsense-blue, 0.4);
+    }
+  }
+}
+
+
+.stream-box {
+  transition: 
+    opacity 0.3s ease,
+    transform 0.3s ease,
+    border-color 0.3s ease;
+  
+  &:not(.active) {
+    opacity: 0.5;
+    filter: grayscale(50%);
+  }
+}
+
+
+.stream-status-container {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 1000;
+}
+
+
+/* In cam-streams.component.scss */
+.streaming-container {
+  &.double-stream {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    height: 100%;
+    padding: 1.5rem;
+    
+    .stream-box {
+      margin: 0;
+      height: 100%;
+      aspect-ratio: 16/9;
+      
+      .img-container {
+        height: 100%;
+        
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+      }
+    }
+  }
+}
+
+.metadata-overlay {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba($darkest-background, 0.9) !important;
+  color: $primary-text !important;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  border: 1px solid rgba($realsense-blue, 0.3);
+  max-width: 300px;
+  backdrop-filter: blur(4px);
+  
+  ul {
+    margin: 0;
+    padding: 0;
+    
+    li {
+      font-size: 0.8rem;
+      line-height: 1.4;
+      padding: 0.2rem 0;
+      list-style-type: none;
+      
+      &:not(:last-child) {
+        border-bottom: 1px solid rgba($realsense-blue, 0.2);
+      }
+    }
+  }
+
+}
+
+
+/* In cam-streams.component.scss */
+.stream-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($darkest-background, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 1;
+  
+  mat-spinner {
+    circle {
+      stroke: $realsense-blue;
     }
   }
 }
