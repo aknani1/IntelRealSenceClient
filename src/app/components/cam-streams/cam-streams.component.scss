@@ -1,4 +1,5 @@
 @import '../../styles/_variables.scss';
+
 .streaming-area {
   width: 100%;
   height: calc(100vh - 64px); // Account for header
@@ -7,33 +8,56 @@
   border-radius: 0;
   position: relative;
   background: linear-gradient(45deg, $darkest-background, darken($darkest-background, 2%));
+  overflow: hidden; // to contain the pseudo-element
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background: url('../assets/waveform.svg') repeat;
+    opacity: 0.05;
+    animation: parallaxMove 30s linear infinite;
+  }
+}
+
+@keyframes parallaxMove {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(20%, 10%);
+  }
 }
 
 .streaming-container {
   position: relative; // Add this for absolute positioning context
   height: 100%; // Ensure full height
- // When empty state is shown
- &:has(.placeholder-text) {
-  border: 1px solid rgba($realsense-blue, 0.1);
-  background-image: 
-    linear-gradient(
-      45deg,
-      rgba($realsense-blue, 0.03) 25%,
-      transparent 25%,
-      transparent 75%,
-      rgba($realsense-blue, 0.03) 75%
-    ),
-    linear-gradient(
-      45deg,
-      rgba($realsense-blue, 0.03) 25%,
-      transparent 25%,
-      transparent 75%,
-      rgba($realsense-blue, 0.03) 75%
-    );
-  background-size: 40px 40px;
-  background-position: 0 0, 20px 20px;
-}
-  
+
+  // When empty state is shown
+  &:has(.placeholder-text) {
+    border: 1px solid rgba($realsense-blue, 0.1);
+    background-image:
+      linear-gradient(
+        45deg,
+        rgba($realsense-blue, 0.03) 25%,
+        transparent 25%,
+        transparent 75%,
+        rgba($realsense-blue, 0.03) 75%
+      ),
+      linear-gradient(
+        45deg,
+        rgba($realsense-blue, 0.03) 25%,
+        transparent 25%,
+        transparent 75%,
+        rgba($realsense-blue, 0.03) 75%
+      );
+    background-size: 40px 40px;
+    background-position: 0 0, 20px 20px;
+  }
+
   &.single-stream {
     .stream-box {
       flex: 1 1 60%;
@@ -41,7 +65,7 @@
       height: 90%;
     }
   }
-  
+
   &.double-stream {
     .stream-box {
       height: 90%;
@@ -50,15 +74,30 @@
   }
 }
 
+/* Unified stream-box styles */
 .stream-box {
   position: relative;
   overflow: hidden;
-  border: 2px solid rgba($realsense-blue, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
+  border: 1px solid rgba($realsense-blue, 0.15);
+  background: linear-gradient(145deg, #1a1a1a, #151515);
+  border-radius: 8px;
+
+  /*
+    Limit the transition to border-color, box-shadow, and transform
+    so that minor layout or sizing changes won’t cause the entire box
+    to animate each time a new frame arrives.
+  */
+  transition:
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow   0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform    0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
   &:hover {
     border-color: rgba($realsense-blue, 0.3);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 16px rgba(0, 159, 222, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.25);
   }
 
   .stream-title {
@@ -72,7 +111,7 @@
     font-size: 0.9rem;
     font-weight: 500;
     backdrop-filter: blur(4px);
-    color: $primary-text
+    color: $primary-text;
   }
 }
 
@@ -80,7 +119,7 @@
   width: 100%;
   height: 100%;
   background: $darkest-background !important;
-  
+
   img {
     width: 100%;
     height: 100%;
@@ -105,8 +144,7 @@
   left: 0;
   gap: 1.5rem;
   animation: fadeIn 0.3s ease-out;
-  
-  // Add an icon/emoji above the text
+
   &:before {
     content: '🎥';
     font-size: 4rem;
@@ -114,12 +152,18 @@
     opacity: 0.6;
   }
 
-  // Optional animation
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
+
 .metadata-overlay {
   position: absolute;
   bottom: 1rem;
@@ -130,14 +174,14 @@
   border-radius: 6px;
   max-width: 300px;
   font-family: 'Roboto Mono', monospace;
-  
+
   ul {
     li {
       font-size: 0.75rem;
       line-height: 1.4;
       padding: 2px 0;
       color: lighten($secondary-text, 10%);
-      
+
       &:not(:last-child) {
         border-bottom: 1px solid rgba($realsense-blue, 0.1);
       }
@@ -149,30 +193,14 @@
   .streaming-container {
     &.double-stream {
       flex-direction: column;
-      
+
       .stream-box {
         max-width: 100%;
         height: 48%;
       }
     }
   }
-  
-  .metadata-overlay {
-    max-width: 200px;
-    font-size: 0.7rem;
-  }
 }
-.stream-loading {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba($darkest-background, 0.8);
-  z-index: 2;
-}
-
 
 .no-stream-center {
   color: rgba($primary-text, 0.6) !important;
@@ -180,6 +208,7 @@
   font-weight: 300;
   padding: 2rem;
   align-items: center;
+
   &:before {
     content: '';
     align-items: center;
@@ -190,23 +219,21 @@
   }
 }
 
-
 .streaming-container {
   &.double-stream {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
     padding: 1.5rem;
-    
+
     .stream-box {
       max-width: 100%;
       height: 100%;
       margin: 0;
       aspect-ratio: 16/9; // Maintain camera aspect ratio
-      
+
       .img-container {
         height: 100%;
-        
+
         img {
           object-fit: cover; // Fill container while maintaining aspect ratio
         }
@@ -214,109 +241,8 @@
     }
   }
 }
-.stream-box {
-  border: 1px solid rgba($realsense-blue, 0.15);
-  background: linear-gradient(145deg, #1a1a1a, #151515);
-  box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 
-      0 6px 16px rgba(0, 159, 222, 0.15),
-      0 4px 12px rgba(0, 0, 0, 0.25);
-  }
-}
-
-.img-container {
-  position: relative;
-  aspect-ratio: 16/9;
-  background: #000 !important;
-  
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-}
-
-
-
-.placeholder-text {
-  font-size: 1.5rem;
-  color: rgba($primary-text, 0.4);
-  position: relative;
-  
-  &:before {
-    content: '';
-    display: block;
-    width: 80px;
-    height: 80px;
-    background: url('../assets/waveform.svg') no-repeat center;
-    opacity: 0.2;
-    margin-bottom: 1rem;
-  }
-  
-  &:after {
-    content: 'Select streams from the control panel';
-    display: block;
-    font-size: 1rem;
-    color: rgba($primary-text, 0.3);
-    margin-top: 0.5rem;
-  }
-}
-
-.stream-status {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  
-  .status-led {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: rgba($primary-text, 0.2);
-    transition: all 0.3s ease;
-    
-    &.active {
-      background: $realsense-blue;
-      box-shadow: 0 0 8px rgba($realsense-blue, 0.4);
-    }
-  }
-}
-
-
-.stream-box {
-  transition: 
-    opacity 0.3s ease,
-    transform 0.3s ease,
-    border-color 0.3s ease;
-  
-  &:not(.active) {
-    opacity: 0.5;
-    filter: grayscale(50%);
-  }
-}
-
-
-.stream-status-container {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  z-index: 1000;
-}
-
-
-/* In cam-streams.component.scss */
+/* Specific double-stream layout overrides */
 .streaming-container {
   &.double-stream {
     display: grid;
@@ -324,15 +250,15 @@
     gap: 1.5rem;
     height: 100%;
     padding: 1.5rem;
-    
+
     .stream-box {
       margin: 0;
       height: 100%;
       aspect-ratio: 16/9;
-      
+
       .img-container {
         height: 100%;
-        
+
         img {
           width: 100%;
           height: 100%;
@@ -354,43 +280,83 @@
   border: 1px solid rgba($realsense-blue, 0.3);
   max-width: 300px;
   backdrop-filter: blur(4px);
-  
+
   ul {
     margin: 0;
     padding: 0;
-    
+
     li {
       font-size: 0.8rem;
       line-height: 1.4;
       padding: 0.2rem 0;
       list-style-type: none;
-      
+
       &:not(:last-child) {
         border-bottom: 1px solid rgba($realsense-blue, 0.2);
       }
     }
   }
-
 }
 
+/* Loading overlay for stream images */
 
-/* In cam-streams.component.scss */
-.stream-loading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba($darkest-background, 0.6);
-  backdrop-filter: blur(2px);
-  z-index: 1;
+/* Resizable/scrollable metadata overlay extras */
+.metadata-overlay {
+  max-height: 40vh;
+  overflow-y: auto;
+  resize: vertical;
+
+  .metadata-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    h5 {
+      margin: 0;
+      color: $realsense-blue;
+    }
+
+    button {
+      min-width: auto;
+      padding: 0 0.25rem;
+    }
+  }
+
+  .metadata-key {
+    color: $secondary-text;
+
+    &::after {
+      content: ':';
+      margin-right: 0.5rem;
+    }
+  }
+}
+.metadata-overlay {
+  background: rgba($darkest-background, 0.95) !important;
+  border: 1px solid rgba($realsense-blue, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   
-  mat-spinner {
-    circle {
-      stroke: $realsense-blue;
+  ul {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.5rem 1.5rem;
+    
+    li {
+      display: contents;
+      &:before {
+        content: attr(data-label);
+        color: $secondary-text;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      &:after {
+        content: attr(data-value);
+        color: $primary-text;
+        font-weight: 400;
+        text-align: right;
+      }
     }
   }
 }

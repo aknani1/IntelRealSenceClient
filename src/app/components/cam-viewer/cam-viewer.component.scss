@@ -122,3 +122,47 @@
   0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+.app-toolbar {
+  background-color: $dark-background;
+  border-bottom: 1px solid #444;
+  .app-title {
+    margin-left: 1rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: $primary-text;
+  }
+  .spacer {
+    flex: 1 1 auto;
+  }
+}
+// cam-viewer.component.scss
+@media (max-width: 768px) {
+  .viewer-container {
+    flex-direction: column;
+    
+    .control-sidenav {
+      width: 100% !important;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid #444;
+    }
+    
+    .persistent-header {
+      height: auto;
+      padding: 0.5rem;
+      
+      .header-title {
+        font-size: 1rem;
+      }
+    }
+  }
+  
+  .streaming-container.double-stream {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    
+    .stream-box {
+      aspect-ratio: 4/3;
+    }
+  }
+}

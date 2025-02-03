@@ -29,12 +29,18 @@
 
   <!-- Main content area -->
   <mat-sidenav-content>
-    <div class="persistent-header">
-      <button mat-icon-button class="sidebar-toggle" (click)="sidenav.toggle()">
+    <mat-toolbar color="primary" class="app-toolbar">
+      <button mat-icon-button (click)="sidenav.toggle()">
         <mat-icon>{{ sidePanelOpen ? 'chevron_left' : 'menu' }}</mat-icon>
       </button>
-      <span class="header-title">Intel RealSense Viewer</span>
-    </div>
+      <span class="app-title">Intel RealSense Viewer</span>
+    
+      <!-- Put any extra icons or action buttons on the right -->
+      <span class="spacer"></span>
+      <button mat-icon-button>
+        <mat-icon>help_outline</mat-icon>
+      </button>
+    </mat-toolbar>
 
     <div class="content-area">
       <app-cam-streams

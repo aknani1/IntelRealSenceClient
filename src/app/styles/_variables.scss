@@ -14,3 +14,8 @@ $scrollbar-hover-lighten: 15%;
 $scrollbar-thumb: #2f2f2f;
 $scrollbar-track: $darkest-background;
 $scrollbar-hover: #3f3f3f;
+$realsense-gradient: linear-gradient(
+  135deg, 
+  adjust-hue($realsense-blue, -15deg) 0%,
+  $realsense-blue 100%
+);

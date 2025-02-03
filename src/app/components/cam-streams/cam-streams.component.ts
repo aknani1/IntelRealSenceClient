@@ -1,6 +1,6 @@
+// File: cam-streams.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, Input, SimpleChanges } from '@angular/core';
-import { MatSpinner } from '@angular/material/progress-spinner';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-cam-streams',
@@ -8,8 +8,7 @@ import { MatSpinner } from '@angular/material/progress-spinner';
   styleUrls: ['./cam-streams.component.scss'],
   standalone: true,
   imports: [
-    CommonModule,
-    MatSpinner
+    CommonModule
   ]
 })
 export class CamStreamsComponent {
@@ -21,23 +20,5 @@ export class CamStreamsComponent {
   @Input() depthMetadataLines: string[] = [];
   @Input() rgbMetadataLines: string[] = [];
 
-  depthImageLoaded = false;
-  colorImageLoaded = false;
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['depthImageUrl']) {
-      this.depthImageLoaded = false;
-    }
-    if (changes['colorImageUrl']) {
-      this.colorImageLoaded = false;
-    }
-  }
-
-  onDepthImgLoad() {
-    this.depthImageLoaded = true;
-  }
-
-  onColorImgLoad() {
-    this.colorImageLoaded = true;
-  }
+  // Removed all "loaded" booleans and overlay logic
 }

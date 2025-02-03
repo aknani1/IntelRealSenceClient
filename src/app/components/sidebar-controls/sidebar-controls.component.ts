@@ -15,6 +15,7 @@ import { AppRoutingModule } from '../../app-routing.module';
 import { CamViewerComponent } from '../cam-viewer/cam-viewer.component';
 import { HttpConfigService } from '../../services/http-config.service';
 import { WebSocketService } from '../../services/web-socket.service';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @Component({
   selector: 'app-sidebar-controls',
@@ -34,6 +35,7 @@ import { WebSocketService } from '../../services/web-socket.service';
     MatTableModule,
     MatInputModule,
     MatSelectModule,
+    MatButtonToggleModule,
     MatButtonModule,]
 })
 export class SidebarControlsComponent implements OnInit {

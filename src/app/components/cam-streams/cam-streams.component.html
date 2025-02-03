@@ -15,17 +15,15 @@
       <h3 class="stream-title">Depth Stream</h3>
       <div class="img-container">
         <ng-container *ngIf="depthImageUrl; else noDepthStream">
-          <div class="stream-loading" *ngIf="!depthImageLoaded">
-            <mat-spinner diameter="32"></mat-spinner>
-          </div>
           <img
-          [src]="depthImageUrl"
-          alt="Depth Stream"
-          (load)="onDepthImgLoad()"  
-        />      
-            <div class="metadata-overlay" *ngIf="depthMetadataLines.length > 0">
+            [src]="depthImageUrl"
+            alt="Depth Stream"
+          />
+          <div class="metadata-overlay" *ngIf="depthMetadataLines.length > 0">
             <ul>
-              <li *ngFor="let line of depthMetadataLines">{{ line }}</li>
+              <li *ngFor="let line of depthMetadataLines" 
+                  [attr.data-label]="line.split(':')[0]"
+                  [attr.data-value]="line.split(':')[1]?.trim()"></li>
             </ul>
           </div>
         </ng-container>
@@ -40,17 +38,15 @@
       <h3 class="stream-title">RGB Stream</h3>
       <div class="img-container">
         <ng-container *ngIf="colorImageUrl; else noRgbStream">
-          <div class="stream-loading" *ngIf="!colorImageLoaded">
-            <mat-spinner diameter="32"></mat-spinner>
-          </div>
           <img
-          [src]="colorImageUrl"
-          alt="RGB Stream"
-          (load)="onColorImgLoad()"  
-        />    
-            <div class="metadata-overlay" *ngIf="rgbMetadataLines.length > 0">
+            [src]="colorImageUrl"
+            alt="RGB Stream"
+          />
+          <div class="metadata-overlay" *ngIf="rgbMetadataLines.length > 0">
             <ul>
-              <li *ngFor="let line of rgbMetadataLines">{{ line }}</li>
+              <li *ngFor="let line of rgbMetadataLines" 
+                  [attr.data-label]="line.split(':')[0]"
+                  [attr.data-value]="line.split(':')[1]?.trim()"></li>
             </ul>
           </div>
         </ng-container>
