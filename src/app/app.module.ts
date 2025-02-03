@@ -21,6 +21,9 @@ import { CamViewerComponent } from './components/cam-viewer/cam-viewer.component
 import { SidebarControlsComponent } from './components/sidebar-controls/sidebar-controls.component';
 import { CamStreamsComponent } from './components/cam-streams/cam-streams.component';
 import { ConnectionStatusComponent } from './components/connection-status/connection-status.component';
+import { SnackbarComponent } from './components/snackbar/snackbar.component';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpErrorInterceptor } from './services/http-error.interceptor';
 
 @NgModule({
   // Put all non-standalone components here
@@ -42,10 +45,15 @@ import { ConnectionStatusComponent } from './components/connection-status/connec
     MatSelectModule,
     MatButtonModule,
     CamViewerComponent,
+    SnackbarComponent,
     ConnectionStatusComponent
     ],
   providers: [
-    provideHttpClient()
+    provideHttpClient(),  {
+      provide: HTTP_INTERCEPTORS,
+      useClass: HttpErrorInterceptor,
+      multi: true
+    }
   ],
   bootstrap: [AppComponent]
 })

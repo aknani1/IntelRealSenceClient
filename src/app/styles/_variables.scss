@@ -19,3 +19,48 @@ $realsense-gradient: linear-gradient(
   adjust-hue($realsense-blue, -15deg) 0%,
   $realsense-blue 100%
 );
+@mixin sliding-toggle {
+    --toggle-width: 48px;
+    --toggle-height: 24px;
+    --thumb-size: 20px;
+    --thumb-offset: 2px;
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+    .mat-slide-toggle-bar {
+      width: var(--toggle-width);
+      height: var(--toggle-height);
+      background: rgba($primary-text, 0.1) !important;
+      border-radius: 12px;
+      transition: background-color var(--transition);
+    }
+  
+    .mat-slide-toggle-thumb {
+      width: var(--thumb-size);
+      height: var(--thumb-size);
+      transform: translateX(var(--thumb-offset));
+      transition: transform var(--transition), 
+                  background-color var(--transition);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(145deg, 
+                  rgba(white, 0.9), 
+                  rgba(white, 0.2));
+        border-radius: 50%;
+      }
+    }
+  
+    &.mat-checked {
+      .mat-slide-toggle-thumb {
+        transform: translateX(calc(var(--toggle-width) - var(--thumb-size) - var(--thumb-offset)));
+        background: $realsense-blue !important;
+      }
+      .mat-slide-toggle-bar {
+        background: rgba($realsense-blue, 0.2) !important;
+      }
+    }
+  }
+  

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable, BehaviorSubject } from 'rxjs';
+import { ErrorService } from './error.service';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +11,7 @@ export class WebSocketService {
   private connectionStatus = new BehaviorSubject<boolean>(false);
   private disconnectReason = new BehaviorSubject<string>('');
 
-  constructor() {
+  constructor(private errorService: ErrorService) {
     this.initSocket();
   }
 
@@ -32,6 +33,7 @@ export class WebSocketService {
 
     this.socket.io.on('error', (error: any) => {
       console.log(`Connection error: ${error}`);
+      this.errorService.addError('Server connection failed');
       this.connectionStatus.next(false);
       this.disconnectReason.next('Server unreachable');
     });
@@ -46,6 +48,7 @@ export class WebSocketService {
       this.connectionStatus.next(status.connected);
       if (!status.connected && status.reason) {
         this.disconnectReason.next(status.reason);
+        this.errorService.addError('Server connection failed');
       } else {
         this.disconnectReason.next('');
       }

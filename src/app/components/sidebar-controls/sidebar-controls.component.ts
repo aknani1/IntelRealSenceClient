@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter,HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -39,6 +39,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
     MatButtonModule,]
 })
 export class SidebarControlsComponent implements OnInit {
+  deviceProfileCollapsed = false;
+
   // Module toggles
   depthModuleEnabled = false;
   rgbCameraEnabled = false;
@@ -140,7 +142,9 @@ export class SidebarControlsComponent implements OnInit {
       this.rgbMetadataToggle.emit(false);         // notify the parent
     }
   }
-
+  toggleDeviceProfile() {
+    this.deviceProfileCollapsed = !this.deviceProfileCollapsed;
+  }
   onDepthMetadataToggle(newValue: boolean) {
     this.httpConfigService.setMetadata('depth', newValue).subscribe({
       next: () => this.depthMetadataToggle.emit(newValue),
