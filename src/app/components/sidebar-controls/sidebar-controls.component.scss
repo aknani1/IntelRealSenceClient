@@ -4,7 +4,7 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 90%;
   padding: 1.5rem 1rem;
   background: linear-gradient(
     160deg,
@@ -14,7 +14,7 @@
   backdrop-filter: blur(16px) saturate(180%);
   border-right: 1px solid rgba($realsense-blue, 0.15);
   box-shadow: 16px 0 40px rgba(0, 0, 0, 0.4), inset 1px 0 0 rgba(255, 255, 255, 0.05);
-  overflow-y: auto;
+  overflow: scroll;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 
@@ -37,6 +37,7 @@
     margin-bottom: 1rem;
     background: linear-gradient(to right, rgba($darkest-background, 0.8), rgba($darkest-background, 0.6));
     backdrop-filter: blur(8px);
+    overflow: visible;
 
     .header-content {
       display: flex;
@@ -194,7 +195,7 @@
     margin-top: auto;
     padding: 1rem;
     background: rgba($darkest-background, 0.9);
-    position: sticky;
+    position: relative;
     bottom: 0;
     z-index: 2;
   }

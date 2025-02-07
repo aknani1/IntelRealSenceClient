@@ -1,0 +1,2436 @@
+// src/app/app-routing.module.ts
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+
+const routes: Routes = [];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }
+
+// src/app/app.component.html
+<app-cam-viewer></app-cam-viewer>
+<app-snackbar></app-snackbar>
+
+// src/app/app.component.scss
+@import './styles/variables';
+/* app.component.scss */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+
+.app-main {
+  height: 100vh;
+}
+/* app.component.scss */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  
+  app-cam-viewer {
+    flex: 1;
+    min-height: 0; // Fixes Firefox flexbox issue
+  }
+}
+
+// src/app/app.component.spec.ts
+import { TestBed } from '@angular/core/testing';
+import { RouterModule } from '@angular/router';
+import { AppComponent } from './app.component';
+
+describe('AppComponent', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [
+        RouterModule.forRoot([])
+      ],
+      declarations: [
+        AppComponent
+      ],
+    }).compileComponents();
+  });
+
+  it('should create the app', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    expect(app).toBeTruthy();
+  });
+
+  it(`should have as title 'IntelRealSense_Angular'`, () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    expect(app.title).toEqual('IntelRealSense_Angular');
+  });
+
+  it('should render title', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, IntelRealSense_Angular');
+  });
+});
+
+// src/app/app.component.ts
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  standalone: false,
+  styleUrl: './app.component.scss'
+})
+export class AppComponent {
+  title = 'IntelRealSense_Angular';
+}
+
+// src/app/app.module.ts
+// app.module.ts
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
+import { AppRoutingModule } from './app-routing.module';
+import { AppComponent } from './app.component';
+// Angular Material modules...
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MatIconModule } from '@angular/material/icon';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatTableModule } from '@angular/material/table';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { provideHttpClient } from '@angular/common/http';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+
+import { CamViewerComponent } from './components/cam-viewer/cam-viewer.component';
+import { SidebarControlsComponent } from './components/sidebar-controls/sidebar-controls.component';
+import { CamStreamsComponent } from './components/cam-streams/cam-streams.component';
+import { ConnectionStatusComponent } from './components/connection-status/connection-status.component';
+import { SnackbarComponent } from './components/snackbar/snackbar.component';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpErrorInterceptor } from './services/http-error.interceptor';
+
+@NgModule({
+  // Put all non-standalone components here
+  declarations: [
+    AppComponent,
+
+  ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    MatSlideToggleModule,
+    BrowserAnimationsModule,
+    FormsModule,
+    MatIconModule,
+    MatSidenavModule,
+    MatExpansionModule,
+    MatTableModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    CamViewerComponent,
+    SnackbarComponent,
+    ConnectionStatusComponent
+    ],
+  providers: [
+    provideHttpClient(),  {
+      provide: HTTP_INTERCEPTORS,
+      useClass: HttpErrorInterceptor,
+      multi: true
+    }
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+
+// src/app/components/assets/waveform.svg
+
+
+// src/app/components/cam-streams/cam-streams.component.html
+<!-- File: cam-streams.component.html -->
+<div class="streaming-area">
+  <!-- Main container controlling single vs double stream layout -->
+  <div class="streaming-container"
+       [class.single-stream]="(showDepth && !showRGB) || (!showDepth && showRGB)"
+       [class.double-stream]="showDepth && showRGB">
+    
+    <!-- If nothing is toggled, show placeholder -->
+    <div *ngIf="!showDepth && !showRGB" class="placeholder-text">
+      Nothing to stream!
+    </div>
+
+    <!-- Depth Stream -->
+    <div *ngIf="showDepth" class="stream-box">
+      <h3 class="stream-title">Depth Stream</h3>
+      <div class="img-container">
+        <ng-container *ngIf="depthImageUrl; else noDepthStream">
+          <img
+            [src]="depthImageUrl"
+            alt="Depth Stream"
+          />
+          <div class="metadata-overlay" *ngIf="depthMetadataLines.length > 0">
+            <ul>
+              <li *ngFor="let line of depthMetadataLines" 
+                  [attr.data-label]="line.split(':')[0]"
+                  [attr.data-value]="line.split(':')[1]?.trim()"></li>
+            </ul>
+          </div>
+        </ng-container>
+        <ng-template #noDepthStream>
+          <div class="no-stream-center">No depth stream available</div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- RGB Stream -->
+    <div *ngIf="showRGB" class="stream-box">
+      <h3 class="stream-title">RGB Stream</h3>
+      <div class="img-container">
+        <ng-container *ngIf="colorImageUrl; else noRgbStream">
+          <img
+            [src]="colorImageUrl"
+            alt="RGB Stream"
+          />
+          <div class="metadata-overlay" *ngIf="rgbMetadataLines.length > 0">
+            <ul>
+              <li *ngFor="let line of rgbMetadataLines" 
+                  [attr.data-label]="line.split(':')[0]"
+                  [attr.data-value]="line.split(':')[1]?.trim()"></li>
+            </ul>
+          </div>
+        </ng-container>
+        <ng-template #noRgbStream>
+          <div class="no-stream-center">No RGB stream available</div>
+        </ng-template>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+// src/app/components/cam-streams/cam-streams.component.scss
+@import '../../styles/_variables.scss';
+
+.streaming-area {
+  width: 100%;
+  height: calc(100vh - 64px); // Account for header
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  position: relative;
+  background: linear-gradient(45deg, $darkest-background, darken($darkest-background, 2%));
+  overflow: hidden; // to contain the pseudo-element
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background: url('../assets/waveform.svg') repeat;
+    opacity: 0.05;
+    animation: parallaxMove 30s linear infinite;
+  }
+}
+
+@keyframes parallaxMove {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(20%, 10%);
+  }
+}
+
+.streaming-container {
+  position: relative; // Add this for absolute positioning context
+  height: 100%; // Ensure full height
+
+  // When empty state is shown
+  &:has(.placeholder-text) {
+    border: 1px solid rgba($realsense-blue, 0.1);
+    background-image:
+      linear-gradient(
+        45deg,
+        rgba($realsense-blue, 0.03) 25%,
+        transparent 25%,
+        transparent 75%,
+        rgba($realsense-blue, 0.03) 75%
+      ),
+      linear-gradient(
+        45deg,
+        rgba($realsense-blue, 0.03) 25%,
+        transparent 25%,
+        transparent 75%,
+        rgba($realsense-blue, 0.03) 75%
+      );
+    background-size: 40px 40px;
+    background-position: 0 0, 20px 20px;
+  }
+
+  &.single-stream {
+    .stream-box {
+      flex: 1 1 60%;
+      max-width: 90%;
+      height: 90%;
+    }
+  }
+
+  &.double-stream {
+    .stream-box {
+      height: 90%;
+      max-width: calc(50% - 1rem);
+    }
+  }
+}
+
+/* Unified stream-box styles */
+.stream-box {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba($realsense-blue, 0.15);
+  background: linear-gradient(145deg, #1a1a1a, #151515);
+  border-radius: 8px;
+
+  /*
+    Limit the transition to border-color, box-shadow, and transform
+    so that minor layout or sizing changes won’t cause the entire box
+    to animate each time a new frame arrives.
+  */
+  transition:
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow   0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform    0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    border-color: rgba($realsense-blue, 0.3);
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 16px rgba(0, 159, 222, 0.15),
+      0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .stream-title {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    background: rgba($darkest-background, 0.7);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+    color: $primary-text;
+  }
+}
+
+.img-container {
+  width: 100%;
+  height: 100%;
+  background: $darkest-background !important;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: crisp-edges;
+  }
+}
+
+.placeholder-text {
+  font-size: 2.5rem; // Increased from 2rem
+  font-weight: 300; // Lighter weight for modern look
+  color: rgba($primary-text, 0.7); // Use primary text with opacity
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  gap: 1.5rem;
+  animation: fadeIn 0.3s ease-out;
+
+  &:before {
+    content: '🎥';
+    font-size: 4rem;
+    filter: grayscale(30%);
+    opacity: 0.6;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+.metadata-overlay {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba($darkest-background, 0.8) !important;
+  backdrop-filter: blur(4px);
+  padding: 0.8rem 1rem !important;
+  border-radius: 6px;
+  max-width: 300px;
+  font-family: 'Roboto Mono', monospace;
+
+  ul {
+    li {
+      font-size: 0.75rem;
+      line-height: 1.4;
+      padding: 2px 0;
+      color: lighten($secondary-text, 10%);
+
+      &:not(:last-child) {
+        border-bottom: 1px solid rgba($realsense-blue, 0.1);
+      }
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .streaming-container {
+    &.double-stream {
+      flex-direction: column;
+
+      .stream-box {
+        max-width: 100%;
+        height: 48%;
+      }
+    }
+  }
+}
+
+.no-stream-center {
+  color: rgba($primary-text, 0.6) !important;
+  font-size: 1.4rem;
+  font-weight: 300;
+  padding: 2rem;
+  align-items: center;
+
+  &:before {
+    content: '';
+    align-items: center;
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
+}
+
+.streaming-container {
+  &.double-stream {
+    display: grid;
+    gap: 1.5rem;
+    padding: 1.5rem;
+
+    .stream-box {
+      max-width: 100%;
+      height: 100%;
+      margin: 0;
+      aspect-ratio: 16/9; // Maintain camera aspect ratio
+
+      .img-container {
+        height: 100%;
+
+        img {
+          object-fit: cover; // Fill container while maintaining aspect ratio
+        }
+      }
+    }
+  }
+}
+
+/* Specific double-stream layout overrides */
+.streaming-container {
+  &.double-stream {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    height: 100%;
+    padding: 1.5rem;
+
+    .stream-box {
+      margin: 0;
+      height: 100%;
+      aspect-ratio: 16/9;
+
+      .img-container {
+        height: 100%;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+      }
+    }
+  }
+}
+
+.metadata-overlay {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba($darkest-background, 0.9) !important;
+  color: $primary-text !important;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  border: 1px solid rgba($realsense-blue, 0.3);
+  max-width: 300px;
+  backdrop-filter: blur(4px);
+
+  ul {
+    margin: 0;
+    padding: 0;
+
+    li {
+      font-size: 0.8rem;
+      line-height: 1.4;
+      padding: 0.2rem 0;
+      list-style-type: none;
+
+      &:not(:last-child) {
+        border-bottom: 1px solid rgba($realsense-blue, 0.2);
+      }
+    }
+  }
+}
+
+/* Loading overlay for stream images */
+
+/* Resizable/scrollable metadata overlay extras */
+.metadata-overlay {
+  max-height: 40vh;
+  overflow-y: auto;
+  resize: vertical;
+
+  .metadata-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    h5 {
+      margin: 0;
+      color: $realsense-blue;
+    }
+
+    button {
+      min-width: auto;
+      padding: 0 0.25rem;
+    }
+  }
+
+  .metadata-key {
+    color: $secondary-text;
+
+    &::after {
+      content: ':';
+      margin-right: 0.5rem;
+    }
+  }
+}
+.metadata-overlay {
+  background: rgba($darkest-background, 0.95) !important;
+  border: 1px solid rgba($realsense-blue, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  
+  ul {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.5rem 1.5rem;
+    
+    li {
+      display: contents;
+      &:before {
+        content: attr(data-label);
+        color: $secondary-text;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      &:after {
+        content: attr(data-value);
+        color: $primary-text;
+        font-weight: 400;
+        text-align: right;
+      }
+    }
+  }
+}
+
+// src/app/components/cam-streams/cam-streams.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { CamStreamsComponent } from './cam-streams.component';
+
+describe('CamStreamsComponent', () => {
+  let component: CamStreamsComponent;
+  let fixture: ComponentFixture<CamStreamsComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [CamStreamsComponent]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(CamStreamsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+// src/app/components/cam-streams/cam-streams.component.ts
+// File: cam-streams.component.ts
+import { CommonModule } from '@angular/common';
+import { Component, Input } from '@angular/core';
+
+@Component({
+  selector: 'app-cam-streams',
+  templateUrl: './cam-streams.component.html',
+  styleUrls: ['./cam-streams.component.scss'],
+  standalone: true,
+  imports: [
+    CommonModule
+  ]
+})
+export class CamStreamsComponent {
+  @Input() showDepth = false;
+  @Input() showRGB = false;
+
+  @Input() depthImageUrl: string | null = null;
+  @Input() colorImageUrl: string | null = null;
+  @Input() depthMetadataLines: string[] = [];
+  @Input() rgbMetadataLines: string[] = [];
+
+  // Removed all "loaded" booleans and overlay logic
+}
+
+// src/app/components/cam-viewer/cam-viewer.component.html
+<!-- File: cam-viewer.component.html -->
+<app-connection-status></app-connection-status>
+<mat-sidenav-container class="viewer-container">
+  <mat-sidenav #sidenav
+               mode="side"
+               position="start"
+               [(opened)]="sidePanelOpen"
+               class="control-sidenav">
+
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <img src="../../../assets/realsense-logo.png" alt="Intel RealSense" class="sidebar-logo">
+    </div>
+
+    <!-- Sidebar Content -->
+    <div class="sidebar-content">
+      <app-sidebar-controls
+        (depthToggleChange)="onDepthToggle($event)"
+        (rgbToggleChange)="onRgbToggle($event)"
+        (depthResolutionChange)="updateDepthConfig($event)"
+        (rgbResolutionChange)="updateRGBConfig($event)"
+        (depthExposureChange)="updateDepthExposure($event)"
+        (rgbExposureChange)="updateRGBExposure($event)"
+        (depthMetadataToggle)="onDepthMetadataToggle($event)"
+        (rgbMetadataToggle)="onRgbMetadataToggle($event)">
+      </app-sidebar-controls>
+    </div>
+  </mat-sidenav>
+
+  <!-- Main content area -->
+  <mat-sidenav-content>
+    <mat-toolbar color="primary" class="app-toolbar">
+      <button mat-icon-button (click)="sidenav.toggle()">
+        <mat-icon>{{ sidePanelOpen ? 'chevron_left' : 'menu' }}</mat-icon>
+      </button>
+      <span class="app-title">Intel RealSense Viewer</span>
+    
+      <!-- Put any extra icons or action buttons on the right -->
+      <span class="spacer"></span>
+      <button mat-icon-button>
+        <mat-icon>help_outline</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <div class="content-area">
+      <app-cam-streams
+        [showDepth]="showDepth"
+        [showRGB]="showRGB"
+        [depthImageUrl]="depthImageUrl"
+        [colorImageUrl]="colorImageUrl"
+        [depthMetadataLines]="depthMetadataLines"
+        [rgbMetadataLines]="rgbMetadataLines">
+      </app-cam-streams>
+
+      <!-- Overlay while reconfiguring -->
+      <div class="overlay" *ngIf="isReconfiguring">
+        <div class="overlay-content">
+          <mat-icon class="spinner">autorenew</mat-icon>
+          <p>Reconfiguring. Please wait...</p>
+        </div>
+      </div>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+
+// src/app/components/cam-viewer/cam-viewer.component.scss
+/* File: cam-viewer.component.scss */
+@import '../../styles/_variables.scss';
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.viewer-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Sidenav styling */
+::ng-deep .control-sidenav {
+  width: 300px !important;
+  background-color: $dark-background !important;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  border-right: 1px solid #444;
+
+  .sidebar-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+    height: 48px;
+    border-bottom: 1px solid #444;
+    background-color: $darkest-background;
+
+    .sidebar-logo {
+      height: 32px;
+    }
+  }
+
+  .sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    height: calc(100vh - 48px);
+    padding: 0 16px 16px 16px;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+      background-color: $dark-background;
+    }
+    &::-webkit-scrollbar-thumb {
+      background-color: #2f2f2f;
+      border-radius: 3px;
+      border: 1px solid $darkest-background;
+      &:hover {
+        background-color: #3f3f3f;
+      }
+    }
+  }
+}
+
+/* Header bar for toggle button */
+.persistent-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: $dark-background;
+  border-bottom: 1px solid #444;
+  height: 48px;
+
+  .sidebar-toggle {
+    color: $primary-text;
+    background-color: rgba($realsense-blue, 0.1);
+    margin-right: 16px;
+    transition: all 0.3s ease;
+    &:hover {
+      background-color: $realsense-blue;
+      transform: scale(1.1);
+    }
+  }
+  .header-title {
+    color: $primary-text;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+}
+
+.content-area {
+  background-color: $darkest-background;
+  position: relative;
+  min-height: calc(100vh - 48px);
+}
+
+/* Overlay while reconfiguring */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba($darkest-background, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+
+  .overlay-content {
+    text-align: center;
+    color: $primary-text;
+    .spinner {
+      font-size: 3rem;
+      animation: spin 1s linear infinite;
+      color: $realsense-blue;
+      margin-bottom: 1rem;
+    }
+    p {
+      font-size: 1.2rem;
+      margin: 0;
+    }
+  }
+}
+
+@keyframes spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.app-toolbar {
+  background-color: $dark-background;
+  border-bottom: 1px solid #444;
+  .app-title {
+    margin-left: 1rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: $primary-text;
+  }
+  .spacer {
+    flex: 1 1 auto;
+  }
+}
+// cam-viewer.component.scss
+@media (max-width: 768px) {
+  .viewer-container {
+    flex-direction: column;
+    
+    .control-sidenav {
+      width: 100% !important;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid #444;
+    }
+    
+    .persistent-header {
+      height: auto;
+      padding: 0.5rem;
+      
+      .header-title {
+        font-size: 1rem;
+      }
+    }
+  }
+  
+  .streaming-container.double-stream {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    
+    .stream-box {
+      aspect-ratio: 4/3;
+    }
+  }
+}
+
+// src/app/components/cam-viewer/cam-viewer.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { CamViewerComponent } from './cam-viewer.component';
+
+describe('CamViewerComponent', () => {
+  let component: CamViewerComponent;
+  let fixture: ComponentFixture<CamViewerComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [CamViewerComponent]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(CamViewerComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+// src/app/components/cam-viewer/cam-viewer.component.ts
+import { Component, OnInit } from '@angular/core';
+import { WebSocketService } from '../../services/web-socket.service';
+import { HttpConfigService } from '../../services/http-config.service';
+import { SidebarControlsComponent } from '../sidebar-controls/sidebar-controls.component';
+import { CamStreamsComponent } from '../cam-streams/cam-streams.component';
+import { BrowserModule } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTableModule } from '@angular/material/table';
+
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { AppRoutingModule } from '../../app-routing.module';
+import { ConnectionStatusComponent } from '../connection-status/connection-status.component';
+import { distinctUntilChanged, Subscription } from 'rxjs';
+
+@Component({
+  selector: 'app-cam-viewer',
+  templateUrl: './cam-viewer.component.html',
+  styleUrls: ['./cam-viewer.component.scss'],
+  standalone: true,
+  imports: [SidebarControlsComponent,CamStreamsComponent,ConnectionStatusComponent,    BrowserModule,
+      AppRoutingModule,
+      MatSlideToggleModule,
+      BrowserAnimationsModule,
+      FormsModule,
+      MatIconModule,
+      MatSidenavModule,
+      MatExpansionModule,
+      MatTableModule,
+      MatInputModule,
+      MatSelectModule,
+      MatButtonModule,
+      MatToolbarModule,
+      ]
+})
+export class CamViewerComponent implements OnInit {
+  // Stream toggles
+  showDepth = false;
+  showRGB = false;
+
+
+
+  sidePanelOpen = true;
+  isReconfiguring = false;
+  public rgbMetadataLines: string[] = [];
+  public depthMetadataLines: string[] = [];
+  // Streamed images
+  depthImageUrl: string = '';
+  colorImageUrl: string = '';
+  // Local copies of metadata booleans
+  depthMetadataOn = false;
+  rgbMetadataOn = false;
+  private activeSubscriptions = new Subscription();
+  private connectionSub: Subscription | null = null;
+
+  constructor(
+    private webSocketService: WebSocketService,
+    private httpConfigService: HttpConfigService
+  ) {}
+ngOnInit(): void {
+  this.connectionSub = this.webSocketService.getConnectionStatus().pipe(
+    distinctUntilChanged()
+  ).subscribe(connected => {
+    if (connected) {
+      this.startStreaming();
+      this.webSocketService.startStream(); // Add this line
+    } else {
+      this.stopStreaming();
+      this.resetUIState();
+    }
+  });
+}
+ngOnDestroy() {
+  this.connectionSub?.unsubscribe();
+  this.activeSubscriptions.unsubscribe();
+}
+
+  private startStreaming() {
+    const videoSubscription = this.webSocketService.getVideoStream().subscribe({
+      next: frame => {
+        // Clear previous metadata if streams are off
+        this.rgbMetadataLines = frame.metadata?.rgb || [];
+        this.depthMetadataLines = frame.metadata?.depth || [];
+        
+        // Update frames and metadata
+        if (this.showRGB) {
+          this.colorImageUrl = 'data:image/jpeg;base64,' + frame.color;
+          this.rgbMetadataLines = frame.metadata?.rgb || [];
+        }
+        if (this.showDepth) {
+          this.depthImageUrl = 'data:image/jpeg;base64,' + frame.depth;
+          this.depthMetadataLines = frame.metadata?.depth || [];
+        }
+      }
+    });
+    
+    // Store subscription to clean up later
+    this.activeSubscriptions.add(videoSubscription);
+  }
+  private stopStreaming() {
+    this.activeSubscriptions.unsubscribe();
+    this.activeSubscriptions = new Subscription();
+    
+    this.depthImageUrl = '';
+    this.colorImageUrl = '';
+    this.rgbMetadataLines = [];
+    this.depthMetadataLines = [];
+    this.showDepth = false;
+    this.showRGB = false;
+  }
+  private resetUIState() {
+    this.depthMetadataOn = false;
+    this.rgbMetadataOn = false;
+    this.isReconfiguring = false;
+  }
+  // Toggling the depth module on/off should NOT trigger reconfig overlay
+  onDepthToggle(newValue: boolean) {
+    this.showDepth = newValue;
+    console.log('Depth Module:', newValue ? 'Enabled' : 'Disabled');
+  }
+
+  // Toggling the RGB module on/off should NOT trigger reconfig overlay
+  onRgbToggle(newValue: boolean) {
+    this.showRGB = newValue;
+    console.log('RGB Module:', newValue ? 'Enabled' : 'Disabled');
+  }
+
+  // Update Depth configuration: this is an actual reconfig → show overlay
+  updateDepthConfig(event: { resolution: string; frameRate: string }) {
+    this.isReconfiguring = true;
+
+    this.httpConfigService.updateConfiguration('depth', event.resolution, event.frameRate)
+      .subscribe({
+        next: () => {
+          // Optionally restart the stream
+          this.webSocketService.startStream();
+
+          // Give the pipeline a second to restart, then hide overlay
+          setTimeout(() => { this.isReconfiguring = false; }, 1000);
+        },
+        error: error => {
+          this.isReconfiguring = false;
+          console.error('Error updating Depth config', error);
+        }
+      });
+  }
+
+  // Update RGB configuration: this is an actual reconfig → show overlay
+  updateRGBConfig(event: { resolution: string; frameRate: string }) {
+    this.isReconfiguring = true;
+
+    this.httpConfigService.updateConfiguration('rgb', event.resolution, event.frameRate)
+      .subscribe({
+        next: () => {
+          this.webSocketService.startStream();
+          // Hide overlay
+          this.isReconfiguring = false;
+        },
+        error: error => {
+          this.isReconfiguring = false;
+          console.error('Error updating RGB config', error);
+        }
+      });
+  }
+
+  // Helper method to send configuration updates to the server
+  private sendConfigurationUpdate(module: string, resolution: string, frameRate: string): void {
+    this.httpConfigService.updateConfiguration(module, resolution, frameRate).subscribe(
+      (response) => {
+        console.log(`${module} Module Updated Successfully`, response);
+        alert(`${module} Module Updated Successfully:\nResolution: ${resolution}\nFrame Rate: ${frameRate}`);
+        this.webSocketService.startStream();
+      },
+      (error) => {
+        console.error(`Error updating ${module} Module`, error);
+        alert(`Error updating ${module} Module:\n${error.message}`);
+      }
+    );
+  }
+  updateDepthExposure(value: number) {
+    console.log('Updating Depth Exposure:', value);
+    this.httpConfigService.updateExposure('depth', value).subscribe(
+      response => console.log(response),
+      error => console.error(error)
+    );
+  }
+
+  updateRGBExposure(value: number) {
+    console.log('Updating RGB Exposure:', value);
+    this.httpConfigService.updateExposure('rgb', value).subscribe(
+      response => console.log(response),
+      error => console.error(error)
+    );
+  }
+  // Called when depth metadata toggle changes
+  onDepthMetadataToggle(newValue: boolean) {
+    this.depthMetadataOn = newValue;
+    console.log('Depth Metadata toggled to:', newValue);
+    if (!newValue) this.depthMetadataLines = [];
+
+  }
+
+  // Called when rgb metadata toggle changes
+  onRgbMetadataToggle(newValue: boolean) {
+    this.rgbMetadataOn = newValue;
+    console.log('RGB Metadata toggled to:', newValue);
+    // Call server to toggle metadata
+    if (!newValue) this.rgbMetadataLines = [];
+  }
+  toggleSidePanel() {
+    this.sidePanelOpen = !this.sidePanelOpen;
+  }
+  stopStreamingServerSide() {
+    // Tell server to stop streaming for this app
+    this.webSocketService.stopStreamServerSide();
+    
+    // Then also unsubscribe locally
+
+  }
+}
+
+// src/app/components/connection-status/connection-status.component.html
+<!-- connection-status.component.html -->
+<div class="status-container" [class.connected]="deviceConnected">
+    <div class="status-indicator"></div>
+    <span class="status-text">
+      {{ getStatusText() }}
+    </span>
+  </div>
+
+// src/app/components/connection-status/connection-status.component.scss
+@import '../../styles/variables';
+
+.status-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 25px;
+  background: rgba($dark-background, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid;
+  border-color: rgba($primary-text, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ff4757;
+    position: relative;
+    transition: all 0.3s ease;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+  }
+
+  .status-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: $primary-text;
+  }
+
+  &.connected {
+    border-color: rgba($realsense-blue, 0.2);
+    
+    .status-indicator {
+      background: #2ed573;
+      box-shadow: 0 0 12px rgba(46, 213, 115, 0.3);
+      
+      &::before {
+        border: 1px solid #2ed573;
+      }
+    }
+  }
+
+  &:not(.connected) {
+    .status-indicator {
+      animation: warning-pulse 1.5s infinite;
+    }
+  }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1 }
+  100% { transform: scale(2.5); opacity: 0 }
+}
+
+@keyframes warning-pulse {
+  0% { opacity: 1 }
+  50% { opacity: 0.5 }
+  100% { opacity: 1 }
+}
+
+
+// Keep existing styles but add:
+.status-container.connected {
+    .status-indicator {
+      background: #2ed573;
+      box-shadow: 0 0 12px rgba(46, 213, 115, 0.3);
+    }
+  }
+  
+  .status-container:not(.connected) {
+    .status-indicator {
+      background: #ff4757;
+      animation: warning-pulse 1.5s infinite;
+    }
+  }
+
+  .status-container {
+    &.connected {
+      .status-indicator {
+        animation: connection-pulse 1.5s infinite;
+      }
+    }
+  }
+  
+  @keyframes connection-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(46, 213, 115, 0.4) }
+    70% { box-shadow: 0 0 0 10px rgba(46, 213, 115, 0) }
+    100% { box-shadow: 0 0 0 0 rgba(46, 213, 115, 0) }
+  }
+
+// src/app/components/connection-status/connection-status.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { ConnectionStatusComponent } from './connection-status.component';
+
+describe('ConnectionStatusComponent', () => {
+  let component: ConnectionStatusComponent;
+  let fixture: ComponentFixture<ConnectionStatusComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [ConnectionStatusComponent]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(ConnectionStatusComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+// src/app/components/connection-status/connection-status.component.ts
+// connection-status.component.ts
+import { Component, OnInit } from '@angular/core';
+import { WebSocketService } from '../../services/web-socket.service';
+
+@Component({
+  selector: 'app-connection-status',
+  templateUrl: './connection-status.component.html',
+  styleUrls: ['./connection-status.component.scss'],
+  standalone: true
+})
+export class ConnectionStatusComponent implements OnInit {
+  deviceConnected = false;
+  reason = '';
+
+  constructor(private wsService: WebSocketService) {}
+
+  ngOnInit() {
+    this.wsService.getConnectionStatus().subscribe(connected => {
+      this.deviceConnected = connected;
+    });
+    this.wsService.getDisconnectReason().subscribe(reason => {
+      this.reason = reason;
+    });
+  }
+
+  getStatusText(): string {
+    if (this.deviceConnected) {
+      return 'Connected';
+    }
+
+    // Handle different reason messages
+    switch (this.reason) {
+      case 'camera_disconnected':
+        return 'Camera Disconnected';
+      case 'transport close':
+      case 'ping timeout':
+      case 'Server unreachable':
+        return 'Server Unreachable';
+      default:
+        return 'Disconnected';
+    }
+  }
+}
+
+// src/app/components/sidebar-controls/sidebar-controls.component.html
+<!-- File: sidebar-controls.component.html -->
+<div class="sidebar">
+  <!-- Sidebar Header -->
+<!-- Update in sidebar-controls.component.html -->
+<div class="sidebar-header">
+  <div class="header-content">
+    <div class="branding">
+      <mat-icon class="brand-icon">precision_manufacturing</mat-icon>
+      <div class="brand-text">
+        <span class="primary">RealSense </span>
+        <span class="secondary">Controller</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Camera Info Card -->
+<!-- Collapsible Device Profile Card -->
+<div class="module-card info-card">
+  <div class="card-header" (click)="toggleDeviceProfile()">
+    <div class="module-icon">
+      <mat-icon>biotech</mat-icon>
+    </div>
+    <h3>Device Profile</h3>
+    <mat-icon class="collapse-icon">
+      {{ deviceProfileCollapsed ? 'expand_more' : 'expand_less' }}
+    </mat-icon>
+  </div>
+  <div class="card-content" *ngIf="!deviceProfileCollapsed">
+    <div class="camera-info">
+      <div class="info-row">
+        <span class="info-label">Name:</span>
+        <span class="info-value">{{ cameraName }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Serial:</span>
+        <span class="info-value serial-number">{{ cameraSerial }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Firmware:</span>
+        <span class="info-value">{{ cameraFirmware }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Interface:</span>
+        <span class="info-value usb-type">{{ cameraUsb }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Depth Module Card -->
+  <div class="module-card" [class.active]="depthModuleEnabled">
+    <div class="card-header" (click)="depthModuleEnabled = !depthModuleEnabled">
+      <div class="module-icon">
+        <mat-icon>waves</mat-icon>
+      </div>
+      <h3>Depth Module</h3>
+      <mat-slide-toggle
+        [(ngModel)]="depthModuleEnabled"
+        (ngModelChange)="onDepthToggle($event)"
+        (click)="$event.stopPropagation()">
+      </mat-slide-toggle>
+    </div>
+    <div class="card-content" *ngIf="depthModuleEnabled">
+      <div class="control-group">
+        <div class="input-group">
+          <label class="control-label">Resolution</label>
+          <mat-select [(ngModel)]="selectedDepthResolution" (selectionChange)="onDepthResolutionChange()">
+            <mat-option value="640x360">640×360 </mat-option>
+            <mat-option value="1280x720">1280×720 </mat-option>
+          </mat-select>
+        </div>
+
+        <div class="input-group">
+          <label class="control-label">Frame Rate</label>
+          <mat-select [(ngModel)]="selectedDepthFrameRate" (selectionChange)="onDepthResolutionChange()">
+            <mat-option value="15">15 FPS</mat-option>
+            <mat-option value="30">30 FPS</mat-option>
+          </mat-select>
+        </div>
+
+        <div class="input-group toggle-group">
+          <label class="control-label">Depth Metadata</label>
+          <mat-slide-toggle
+            [(ngModel)]="depthMetadataEnabled"
+            (ngModelChange)="onDepthMetadataToggle($event)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="input-group">
+          <label class="control-label">Exposure Control</label>
+          <div class="holographic-slider">
+            <div class="slider-track" [style.width]="(depthExposureValue/1000)*100 + '%'"></div>
+            <input type="range" min="0" max="1000" step="50"
+                  [(ngModel)]="depthExposureValue"
+                  (change)="onDepthExposureChange()" />
+            <div class="slider-value">{{ depthExposureValue }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RGB Module Card -->
+  <div class="module-card" [class.active]="rgbCameraEnabled">
+    <div class="card-header" (click)="rgbCameraEnabled = !rgbCameraEnabled">
+      <div class="module-icon">
+        <mat-icon>color_lens</mat-icon>
+      </div>
+      <h3>RGB Module</h3>
+      <mat-slide-toggle
+        [(ngModel)]="rgbCameraEnabled"
+        (ngModelChange)="onRgbToggle($event)"
+        (click)="$event.stopPropagation()">
+      </mat-slide-toggle>
+    </div>
+    <div class="card-content" *ngIf="rgbCameraEnabled">
+      <div class="control-group">
+        <div class="input-group">
+          <label class="control-label">Resolution</label>
+          <mat-select [(ngModel)]="selectedRGBResolution" (selectionChange)="onRgbResolutionChange()">
+            <mat-option value="640x360">640×360 RGB</mat-option>
+            <mat-option value="1280x720">1280×720 RGB</mat-option>
+          </mat-select>
+        </div>
+
+        <div class="input-group">
+          <label class="control-label">Frame Rate</label>
+          <mat-select [(ngModel)]="selectedRGBFrameRate" (selectionChange)="onRgbResolutionChange()">
+            <mat-option value="15">15 FPS</mat-option>
+            <mat-option value="30">30 FPS</mat-option>
+          </mat-select>
+        </div>
+
+        <div class="input-group toggle-group">
+          <label class="control-label">Color Metadata</label>
+          <mat-slide-toggle
+            [(ngModel)]="rgbMetadataEnabled"
+            (ngModelChange)="onRgbMetadataToggle($event)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="input-group">
+          <label class="control-label">Exposure Control</label>
+          <div class="holographic-slider">
+            <div class="slider-track" [style.width]="(rgbExposureValue/1000)*100 + '%'"></div>
+            <input type="range" min="0" max="1000" step="50"
+                  [(ngModel)]="rgbExposureValue"
+                  (change)="onRgbExposureChange()" />
+            <div class="slider-value">{{ rgbExposureValue }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Controls -->
+  <div class="system-controls">
+    <button mat-button class="hard-reset-btn" (click)="onHardReset()">
+      <mat-icon>restart_alt</mat-icon>
+      <span>Factory Reset</span>
+    </button>
+  </div>
+</div>
+
+// src/app/components/sidebar-controls/sidebar-controls.component.scss
+@import '../../styles/_variables.scss';
+
+/* Sidebar Container */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 1.5rem 1rem;
+  background: linear-gradient(
+    160deg,
+    rgba($dark-background, 0.98) 0%,
+    rgba($darkest-background, 0.98) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  border-right: 1px solid rgba($realsense-blue, 0.15);
+  box-shadow: 16px 0 40px rgba(0, 0, 0, 0.4), inset 1px 0 0 rgba(255, 255, 255, 0.05);
+  overflow-y: auto;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -1px;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, $realsense-blue, transparent);
+    opacity: 0.2;
+    animation: edge-glow 6s infinite linear;
+  }
+
+  /* Sidebar Header */
+  .sidebar-header {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba($realsense-blue, 0.1);
+    margin-bottom: 1rem;
+    background: linear-gradient(to right, rgba($darkest-background, 0.8), rgba($darkest-background, 0.6));
+    backdrop-filter: blur(8px);
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .branding {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .brand-icon {
+        color: $realsense-blue;
+        font-size: 2rem;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba($realsense-blue, 0.1);
+        border-radius: 8px;
+        padding: 6px;
+      }
+
+      .brand-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+
+        .primary {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: $primary-text;
+          letter-spacing: -0.5px;
+        }
+
+        .secondary {
+          font-size: 0.75rem;
+          color: rgba($primary-text, 0.7);
+          letter-spacing: 1px;
+          text-transform: uppercase;
+        }
+      }
+    }
+  }
+
+  /* Module Cards */
+  .module-card {
+    background: rgba($dark-background, 0.6);
+    border-radius: 12px;
+    margin: 1rem 0;
+    border: 1px solid rgba($realsense-blue, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 159, 222, 0.15);
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(to right, transparent, $realsense-blue, transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    &.active {
+      background: rgba($dark-background, 0.8);
+      border-left: 4px solid $realsense-blue;
+
+      &::after {
+        opacity: 0.4;
+      }
+
+      .card-header {
+        background: rgba($darkest-background, 0.6);
+
+        h3 {
+          color: $realsense-blue;
+        }
+      }
+    }
+
+    .card-header {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba($darkest-background, 0.4);
+      cursor: pointer;
+
+      .module-icon {
+        width: 32px;
+        height: 32px;
+        background: rgba($realsense-blue, 0.1);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        mat-icon {
+          color: $realsense-blue;
+        }
+      }
+
+      h3 {
+        margin: 0;
+        font-weight: 500;
+        font-size: 1.1rem;
+        color: $primary-text;
+        flex-grow: 1;
+        letter-spacing: 0.2px;
+      }
+
+      mat-slide-toggle {
+        margin-left: auto;
+      }
+    }
+
+    .card-content {
+      padding: 1rem;
+      background: linear-gradient(rgba($darkest-background, 0.4), rgba($darkest-background, 0.2));
+
+      .control-group {
+        margin: 1.5rem 0;
+
+        h4 {
+          color: $secondary-text;
+          font-size: 0.9rem;
+          margin-bottom: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          .info-icon {
+            font-size: 1rem;
+            color: rgba($primary-text, 0.6);
+          }
+        }
+      }
+    }
+  }
+
+  /* System Controls */
+  .system-controls {
+    margin-top: auto;
+    padding: 1rem;
+    background: rgba($darkest-background, 0.9);
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+  }
+}
+
+/* Custom Slider Styling */
+.holographic-slider {
+  position: relative;
+  height: 32px;
+
+  input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .slider-track {
+    position: absolute;
+    height: 4px;
+    background: linear-gradient(to right, rgba($realsense-blue, 0.4), $realsense-blue);
+    border-radius: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: width 0.1s ease;
+  }
+
+  .slider-value {
+    position: absolute;
+    right: 0;
+    top: -20px;
+    background: rgba($darkest-background, 0.9);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    border: 1px solid rgba($realsense-blue, 0.3);
+  }
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 12px;
+    transform: translateY(-50%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba($realsense-blue, 0.1) 50%,
+      transparent 100%
+    );
+    animation: scanner 3s infinite linear;
+  }
+}
+
+/* Keyframes */
+@keyframes edge-glow {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes scanner {
+  0% { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Angular Material Toggle Overrides for a Custom Look */
+::ng-deep .mat-slide-toggle {
+  --toggle-height: 20px;
+  --toggle-width: 40px;
+  --thumb-size: 16px;
+  --thumb-spacing: 2px;
+
+  .mat-slide-toggle-bar {
+    height: var(--toggle-height) !important;
+    width: var(--toggle-width) !important;
+    border-radius: 12px !important;
+    background: rgba($primary-text, 0.1) !important;
+    transition: background-color 0.3s ease;
+  }
+
+  .mat-slide-toggle-thumb {
+    width: var(--thumb-size) !important;
+    height: var(--thumb-size) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    top: calc(50% - var(--thumb-size)/2) !important;
+    left: var(--thumb-spacing) !important;
+    background: linear-gradient(145deg, #fff, #e6e6e6) !important;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+  }
+
+  &.mat-checked {
+    .mat-slide-toggle-bar {
+      background: rgba($realsense-blue, 0.3) !important;
+    }
+    .mat-slide-toggle-thumb {
+      left: calc(var(--toggle-width) - var(--thumb-size) - var(--thumb-spacing)) !important;
+      background: $realsense-blue !important;
+    }
+  }
+
+  &:hover {
+    .mat-slide-toggle-bar {
+      background: rgba($primary-text, 0.15) !important;
+    }
+  }
+
+  &.mat-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba($darkest-background, 0.4);
+  cursor: pointer;
+  
+  h3 {
+    margin: 0;
+    flex-grow: 1;
+    font-weight: 500;
+    font-size: 1.1rem;
+    color: $primary-text;
+  }
+  
+  .collapse-icon {
+    font-size: 1.2rem;
+    color: $primary-text;
+    margin-left: auto;
+  }
+}
+
+// src/app/components/sidebar-controls/sidebar-controls.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { SidebarControlsComponent } from './sidebar-controls.component';
+
+describe('SidebarControlsComponent', () => {
+  let component: SidebarControlsComponent;
+  let fixture: ComponentFixture<SidebarControlsComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [SidebarControlsComponent]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(SidebarControlsComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+// src/app/components/sidebar-controls/sidebar-controls.component.ts
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, Output, EventEmitter,HostListener } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatTableModule } from '@angular/material/table';
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { AppRoutingModule } from '../../app-routing.module';
+import { CamViewerComponent } from '../cam-viewer/cam-viewer.component';
+import { HttpConfigService } from '../../services/http-config.service';
+import { WebSocketService } from '../../services/web-socket.service';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+
+@Component({
+  selector: 'app-sidebar-controls',
+  templateUrl: './sidebar-controls.component.html',
+  styleUrls: ['./sidebar-controls.component.scss'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    BrowserModule,
+    AppRoutingModule,
+    MatSlideToggleModule,
+    BrowserAnimationsModule,
+    FormsModule,
+    MatIconModule,
+    MatSidenavModule,
+    MatExpansionModule,
+    MatTableModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonToggleModule,
+    MatButtonModule,]
+})
+export class SidebarControlsComponent implements OnInit {
+  deviceProfileCollapsed = false;
+
+  // Module toggles
+  depthModuleEnabled = false;
+  rgbCameraEnabled = false;
+
+  // Metadata toggles
+  depthMetadataEnabled = false;
+  rgbMetadataEnabled = false;
+
+  // Resolutions
+  selectedDepthResolution = '640x360';
+  selectedDepthFrameRate = '30';
+  selectedRGBResolution = '640x360';
+  selectedRGBFrameRate = '30';
+
+  // Exposures
+  depthExposureValue = 1000;
+  rgbExposureValue = 1000;
+
+  // Camera info variables
+  cameraName: string = '';
+  cameraSerial: string = '';
+  cameraFirmware: string = '';
+  cameraUsb: string = '';
+
+
+  // Outputs for toggles
+  @Output() depthToggleChange = new EventEmitter<boolean>();
+  @Output() rgbToggleChange = new EventEmitter<boolean>();
+  @Output() depthResolutionChange = new EventEmitter<{ resolution: string; frameRate: string }>();
+  @Output() rgbResolutionChange = new EventEmitter<{ resolution: string; frameRate: string }>();
+  @Output() depthExposureChange = new EventEmitter<number>();
+  @Output() rgbExposureChange = new EventEmitter<number>();
+  // NEW events for metadata
+  @Output() depthMetadataToggle = new EventEmitter<boolean>();
+  @Output() rgbMetadataToggle   = new EventEmitter<boolean>();
+  constructor(
+    private httpConfigService: HttpConfigService,  private webSocketService: WebSocketService
+  ) {}
+
+  ngOnInit() {
+    this.loadCameraInfo();
+    this.loadDefaultsFromServer();
+
+  }
+
+  private loadDefaultsFromServer() {
+    this.httpConfigService.getDefaults().subscribe({
+      next: (defaults) => {
+        // E.g., store them in a local variable if needed
+        // Or you can set your UI to these defaults immediately
+        console.log('[SidebarControls] Received defaults:', defaults);
+  
+        this.selectedDepthResolution = `${defaults.depth.width}x${defaults.depth.height}`;
+        this.selectedDepthFrameRate  = defaults.depth.fps.toString();
+        this.selectedRGBResolution   = `${defaults.color.width}x${defaults.color.height}`;
+        this.selectedRGBFrameRate    = defaults.color.fps.toString();
+  
+        this.depthExposureValue = defaults.depth.exposure;
+        this.rgbExposureValue   = defaults.color.exposure;
+  
+        // ...any other UI toggles you want to set...
+      },
+      error: err => console.error('Error loading defaults:', err)
+    });
+  }
+  private loadCameraInfo() {
+    this.httpConfigService.getCameraInfo().subscribe({
+      next: (info) => {
+        this.cameraName = info.name || '';
+        this.cameraSerial = info.serial_number || '';
+        this.cameraFirmware = info.firmware_version || '';
+        this.cameraUsb = info.usb_type_descriptor || '';
+      },
+      error: (err) => {
+        console.error('Error fetching camera info:', err);
+      }
+    });
+  }
+
+  // Depth module toggled
+  onDepthToggle(newValue: boolean) {
+    console.log('Depth Module toggled to:', newValue);
+    this.depthToggleChange.emit(newValue);
+  
+    // If turned OFF, also turn OFF depth metadata if it's on
+    if (!newValue && this.depthMetadataEnabled) {
+      this.depthMetadataEnabled = false; // visually set toggle to off
+      this.depthMetadataToggle.emit(false); // notify the parent
+    }
+  }
+  // RGB module toggled
+  onRgbToggle(newValue: boolean) {
+    console.log('RGB Camera toggled to:', newValue);
+    this.rgbToggleChange.emit(newValue);
+
+    // If turned OFF, also turn OFF rgb metadata if it's on
+    if (!newValue && this.rgbMetadataEnabled) {
+      this.rgbMetadataEnabled = false;            // visually set toggle to off
+      this.rgbMetadataToggle.emit(false);         // notify the parent
+    }
+  }
+  toggleDeviceProfile() {
+    this.deviceProfileCollapsed = !this.deviceProfileCollapsed;
+  }
+  onDepthMetadataToggle(newValue: boolean) {
+    this.httpConfigService.setMetadata('depth', newValue).subscribe({
+      next: () => this.depthMetadataToggle.emit(newValue),
+      error: (err) => console.error('Failed to set depth metadata', err)
+    });
+  }
+
+  onRgbMetadataToggle(newValue: boolean) {
+    this.httpConfigService.setMetadata('rgb', newValue).subscribe({
+      next: () => this.rgbMetadataToggle.emit(newValue),
+      error: (err) => console.error('Failed to set RGB metadata', err)
+    });
+  }
+
+  // Depth resolution/fps
+  onDepthResolutionChange() {
+    this.depthResolutionChange.emit({
+      resolution: this.selectedDepthResolution,
+      frameRate: this.selectedDepthFrameRate
+    });
+  }
+
+  // RGB resolution/fps
+  onRgbResolutionChange() {
+    this.rgbResolutionChange.emit({
+      resolution: this.selectedRGBResolution,
+      frameRate: this.selectedRGBFrameRate
+    });
+  }
+
+  // Depth exposure
+  onDepthExposureChange() {
+    this.depthExposureChange.emit(this.depthExposureValue);
+  }
+
+  // RGB exposure
+  onRgbExposureChange() {
+    this.rgbExposureChange.emit(this.rgbExposureValue);
+  }
+
+// sidebar-controls.component.ts (excerpt)
+// Update onHardReset() method
+// Update onHardReset
+onHardReset() {
+  if (!confirm('Hard reset will restore all defaults. Continue?')) return;
+
+  // Force full disconnection
+  // this.webSocketService.forceDisconnect();
+  // this.httpConfigService.setMetadata('depth', false).subscribe();
+  // this.httpConfigService.setMetadata('rgb', false).subscribe();
+  // Reset all UI components
+  this.depthModuleEnabled = false;
+  this.rgbCameraEnabled = false;
+  this.depthMetadataEnabled = false;
+  this.rgbMetadataEnabled = false;
+
+  // Emit changes
+  this.depthToggleChange.emit(false);
+  this.rgbToggleChange.emit(false);
+  this.depthMetadataToggle.emit(false);
+  this.rgbMetadataToggle.emit(false);
+
+  // Server-side reset with delay
+    this.httpConfigService.hardReset().subscribe({
+      next: () => {
+        this.loadDefaultsFromServer();
+        this.webSocketService.startStream();
+      },
+      error: (err) => console.error('Hard reset failed:', err)
+    });
+}
+
+}
+
+// src/app/components/snackbar/snackbar.component.html
+
+
+// src/app/components/snackbar/snackbar.component.scss
+
+
+// src/app/components/snackbar/snackbar.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { SnackbarComponent } from './snackbar.component';
+
+describe('SnackbarComponent', () => {
+  let component: SnackbarComponent;
+  let fixture: ComponentFixture<SnackbarComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [SnackbarComponent]
+    })
+    .compileComponents();
+
+    fixture = TestBed.createComponent(SnackbarComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+// src/app/components/snackbar/snackbar.component.ts
+import { Component } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ErrorService } from '../../services/error.service';
+
+@Component({
+  selector: 'app-snackbar',
+  standalone: true,
+  
+  templateUrl: './snackbar.component.html',
+  styleUrl: './snackbar.component.scss'
+})
+export class SnackbarComponent {
+  constructor(
+    private snackBar: MatSnackBar,
+    private errorService: ErrorService
+  ) {
+    this.errorService.getErrors().subscribe(message => {
+      this.showError(message);
+    });
+  }
+
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Dismiss', {
+      duration: 5000,
+      panelClass: ['custom-snackbar']
+    });
+  }
+}
+
+// src/app/services/error.service.ts
+import { Injectable } from '@angular/core';
+import { Subject, Observable } from 'rxjs';
+
+@Injectable({ providedIn: 'root' })
+export class ErrorService {
+  private errors = new Subject<string>();
+
+  getErrors(): Observable<string> {
+    return this.errors.asObservable();
+  }
+
+  addError(message: string): void {
+    this.errors.next(message);
+  }
+}
+
+// src/app/services/http-config.service.spec.ts
+import { TestBed } from '@angular/core/testing';
+
+import { HttpConfigService } from './http-config.service';
+
+describe('HttpConfigService', () => {
+  let service: HttpConfigService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(HttpConfigService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+
+// src/app/services/http-config.service.ts
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { WebSocketService } from './web-socket.service';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class HttpConfigService {
+  private apiUrl = 'http://localhost:5000/api/configure'; // Flask server URL
+  private exposureApiUrl = 'http://localhost:5000/api/exposure'; // Endpoint for exposure updates
+  private setMetaDataUrl = 'http://localhost:5000/api/set_metadata'; // endpoint for metadata
+  private cameraInfoUrl = 'http://localhost:5000/api/camera_info';
+  private hardResetUrl = 'http://localhost:5000/api/hard_reset';
+
+  constructor(private http: HttpClient, private webSocketService: WebSocketService) {}
+
+  updateConfiguration(module: string, resolution: string, frameRate: string): Observable<any> {
+    return new Observable(observer => {
+      setTimeout(() => {
+        this.http.post(this.apiUrl, { module, resolution, frame_rate: frameRate })
+          .subscribe({
+            next: (res) => {
+              this.webSocketService.startStream();
+              observer.next(res);
+            },
+            error: (err) => observer.error(err)
+          });
+      }, 500); // Wait for stream stop
+    });
+  }
+
+  updateExposure(module: string, exposureValue: number): Observable<any> {
+    const body = { module, exposure: exposureValue };
+    return this.http.post(this.exposureApiUrl, body);
+  }
+
+  setMetadata(module: string, state: boolean): Observable<any> {
+    return this.http.post(this.setMetaDataUrl, { module, state });
+  }
+
+  getCameraInfo(): Observable<any> {
+    return this.http.get(this.cameraInfoUrl);
+  }
+
+  hardReset(): Observable<any> {
+    return this.http.post(this.hardResetUrl, {});
+  }
+
+  getDefaults(): Observable<any> {
+    return this.http.get('http://localhost:5000/api/defaults');
+  }
+}
+
+// src/app/services/http-error.interceptor.ts
+import { Injectable } from '@angular/core';
+import {
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpInterceptor,
+  HttpErrorResponse
+} from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { ErrorService } from './error.service';
+
+@Injectable()
+export class HttpErrorInterceptor implements HttpInterceptor {
+  constructor(private errorService: ErrorService) {}
+
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    return next.handle(req).pipe(
+      catchError((error: HttpErrorResponse) => {
+        let errorMessage = error.error?.error || error.message;
+        this.errorService.addError(errorMessage);
+        return throwError(() => error);
+      })
+    );
+  }
+}
+
+// src/app/services/web-socket.service.spec.ts
+import { TestBed } from '@angular/core/testing';
+
+import { WebSocketService } from './web-socket.service';
+
+describe('WebSocketService', () => {
+  let service: WebSocketService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(WebSocketService);
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+});
+
+// src/app/services/web-socket.service.ts
+import { Injectable } from '@angular/core';
+import { io, Socket } from 'socket.io-client';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { ErrorService } from './error.service';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class WebSocketService {
+  private socket!: Socket;
+  private connectionStatus = new BehaviorSubject<boolean>(false);
+  private disconnectReason = new BehaviorSubject<string>('');
+
+  constructor(private errorService: ErrorService) {
+    this.initSocket();
+  }
+
+  stopStreamServerSide() {
+    this.socket.emit('stop_stream');
+  }
+
+  private initSocket() {
+    this.socket = io('http://localhost:5000', {
+      reconnectionAttempts: 3,
+      reconnectionDelay: 2000
+    });
+
+    this.socket.on('connect', () => {
+      console.log('Socket connected');
+      this.connectionStatus.next(true);
+      this.disconnectReason.next('');
+    });
+
+    this.socket.io.on('error', (error: any) => {
+      console.log(`Connection error: ${error}`);
+      this.errorService.addError('Server connection failed');
+      this.connectionStatus.next(false);
+      this.disconnectReason.next('Server unreachable');
+    });
+
+    this.socket.on('disconnect', (reason: any) => {
+      console.log('Socket disconnected:', reason);
+      this.connectionStatus.next(false);
+      this.disconnectReason.next(reason);
+    });
+
+    this.socket.on('device_status', (status: { connected: boolean; reason?: string }) => {
+      this.connectionStatus.next(status.connected);
+      if (!status.connected && status.reason) {
+        this.disconnectReason.next(status.reason);
+        this.errorService.addError('Server connection failed');
+      } else {
+        this.disconnectReason.next('');
+      }
+    });
+  }
+
+  getConnectionStatus(): Observable<boolean> {
+    return this.connectionStatus.asObservable();
+  }
+
+  getDisconnectReason(): Observable<string> {
+    return this.disconnectReason.asObservable();
+  }
+
+  public startStream(): void {
+    if (!this.socket.connected) {
+      this.socket.connect();
+    }
+    this.socket.emit('start_stream');
+  }
+
+  getVideoStream(): Observable<{
+    color: string;
+    depth: string;
+    metadata?: {
+      rgb?: string[];
+      depth?: string[];
+    };
+  }> {
+    return new Observable(observer => {
+      this.socket.on('video_frame', (frame) => {
+        observer.next(frame);
+      });
+
+      return () => {
+        // This code runs on unsubscribe
+      };
+    });
+  }
+
+  sendConfigurationUpdate(module: string, resolution: string, frameRate: string): void {
+    this.socket.emit('update_configuration', { module, resolution, frameRate });
+  }
+
+  disconnect() {
+    this.socket.disconnect();
+    this.socket.removeAllListeners();
+  }
+
+  public forceDisconnect() {
+    this.socket.disconnect();
+    this.socket.removeAllListeners();
+    this.connectionStatus.next(false);
+    this.disconnectReason.next('manual_reset');
+  }
+}
+
+// src/app/styles/_variables.scss
+// Example color variables 
+$dark-background: #1e1e1e;          // or #252526
+$darkest-background: #121212;       
+$realsense-blue: #009fde;
+$primary-text: #f0f0f0;             // near-whitish text
+$secondary-text: #b8b8b8;           // lighter gray for secondary text
+$link-color: #00aaff;               // or any accent you want
+
+// Scrollbar variables
+$scrollbar-width: 8px;
+$scrollbar-radius: 4px;
+$scrollbar-hover-lighten: 15%;
+// Scrollbar colors
+$scrollbar-thumb: #2f2f2f;
+$scrollbar-track: $darkest-background;
+$scrollbar-hover: #3f3f3f;
+$realsense-gradient: linear-gradient(
+  135deg, 
+  adjust-hue($realsense-blue, -15deg) 0%,
+  $realsense-blue 100%
+);
+@mixin sliding-toggle {
+    --toggle-width: 48px;
+    --toggle-height: 24px;
+    --thumb-size: 20px;
+    --thumb-offset: 2px;
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+    .mat-slide-toggle-bar {
+      width: var(--toggle-width);
+      height: var(--toggle-height);
+      background: rgba($primary-text, 0.1) !important;
+      border-radius: 12px;
+      transition: background-color var(--transition);
+    }
+  
+    .mat-slide-toggle-thumb {
+      width: var(--thumb-size);
+      height: var(--thumb-size);
+      transform: translateX(var(--thumb-offset));
+      transition: transform var(--transition), 
+                  background-color var(--transition);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(145deg, 
+                  rgba(white, 0.9), 
+                  rgba(white, 0.2));
+        border-radius: 50%;
+      }
+    }
+  
+    &.mat-checked {
+      .mat-slide-toggle-thumb {
+        transform: translateX(calc(var(--toggle-width) - var(--thumb-size) - var(--thumb-offset)));
+        background: $realsense-blue !important;
+      }
+      .mat-slide-toggle-bar {
+        background: rgba($realsense-blue, 0.2) !important;
+      }
+    }
+  }
+
+// src/assets/realsense-logo.png
+�PNG
+

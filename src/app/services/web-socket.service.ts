@@ -104,4 +104,16 @@ export class WebSocketService {
     this.connectionStatus.next(false);
     this.disconnectReason.next('manual_reset');
   }
+
+  start3DStream(): void {
+    this.socket.emit('start_3d_stream');
+  }
+  
+  getPointCloudStream(): Observable<any> {
+    return new Observable(observer => {
+      this.socket.on('point_cloud', (data: any) => observer.next(data));
+      return () => this.socket.off('point_cloud');
+    });
+  }
+  
 }

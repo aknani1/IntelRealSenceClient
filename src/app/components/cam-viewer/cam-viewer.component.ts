@@ -19,6 +19,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from '../../app-routing.module';
 import { ConnectionStatusComponent } from '../connection-status/connection-status.component';
 import { distinctUntilChanged, Subscription } from 'rxjs';
+import { ThreeDViewerComponent } from '../three-d-viewer/three-d-viewer.component';
 
 @Component({
   selector: 'app-cam-viewer',
@@ -38,6 +39,7 @@ import { distinctUntilChanged, Subscription } from 'rxjs';
       MatSelectModule,
       MatButtonModule,
       MatToolbarModule,
+      ThreeDViewerComponent,
       ]
 })
 export class CamViewerComponent implements OnInit {

@@ -1,52 +1,53 @@
 <!-- File: sidebar-controls.component.html -->
 <div class="sidebar">
   <!-- Sidebar Header -->
-<!-- Update in sidebar-controls.component.html -->
-<div class="sidebar-header">
-  <div class="header-content">
-    <div class="branding">
-      <mat-icon class="brand-icon">precision_manufacturing</mat-icon>
-      <div class="brand-text">
-        <span class="primary">RealSense </span>
-        <span class="secondary">Controller</span>
-      </div>
-    </div>
-  </div>
-</div>
+  <!-- Update in sidebar-controls.component.html -->
 
-  <!-- Camera Info Card -->
-<!-- Collapsible Device Profile Card -->
-<div class="module-card info-card">
-  <div class="card-header" (click)="toggleDeviceProfile()">
-    <div class="module-icon">
-      <mat-icon>biotech</mat-icon>
-    </div>
-    <h3>Device Profile</h3>
-    <mat-icon class="collapse-icon">
-      {{ deviceProfileCollapsed ? 'expand_more' : 'expand_less' }}
-    </mat-icon>
-  </div>
-  <div class="card-content" *ngIf="!deviceProfileCollapsed">
-    <div class="camera-info">
-      <div class="info-row">
-        <span class="info-label">Name:</span>
-        <span class="info-value">{{ cameraName }}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Serial:</span>
-        <span class="info-value serial-number">{{ cameraSerial }}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Firmware:</span>
-        <span class="info-value">{{ cameraFirmware }}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Interface:</span>
-        <span class="info-value usb-type">{{ cameraUsb }}</span>
+  <div class="sidebar-header">
+    <div class="header-content">
+      <div class="branding">
+        <mat-icon class="brand-icon">precision_manufacturing</mat-icon>
+        <div class="brand-text">
+          <span class="primary">RealSense </span>
+          <span class="secondary">Controller</span>
+        </div>
       </div>
     </div>
   </div>
-</div>
+
+    <!-- Camera Info Card -->
+  <!-- Collapsible Device Profile Card -->
+  <div class="module-card info-card">
+    <div class="card-header" (click)="toggleDeviceProfile()">
+      <div class="module-icon">
+        <mat-icon>biotech</mat-icon>
+      </div>
+      <h3>Device Profile</h3>
+      <mat-icon class="collapse-icon">
+        {{ deviceProfileCollapsed ? 'expand_more' : 'expand_less' }}
+      </mat-icon>
+    </div>
+    <div class="card-content" *ngIf="!deviceProfileCollapsed">
+      <div class="camera-info">
+        <div class="info-row">
+          <span class="info-label">Name:</span>
+          <span class="info-value">{{ cameraName }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Serial:</span>
+          <span class="info-value serial-number">{{ cameraSerial }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Firmware:</span>
+          <span class="info-value">{{ cameraFirmware }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Interface:</span>
+          <span class="info-value usb-type">{{ cameraUsb }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
 
   <!-- Depth Module Card -->
@@ -163,5 +164,6 @@
     </button>
   </div>
 </div>
+
 
 

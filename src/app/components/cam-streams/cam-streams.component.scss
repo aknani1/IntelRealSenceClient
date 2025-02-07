@@ -2,7 +2,7 @@
 
 .streaming-area {
   width: 100%;
-  height: calc(100vh - 64px); // Account for header
+  height:calc(100vh - 64px); // Account for header
   margin: 0;
   border: none;
   border-radius: 0;
@@ -35,7 +35,6 @@
 .streaming-container {
   position: relative; // Add this for absolute positioning context
   height: 100%; // Ensure full height
-
   // When empty state is shown
   &:has(.placeholder-text) {
     border: 1px solid rgba($realsense-blue, 0.1);
