@@ -34,11 +34,15 @@ export class AppRoutingModule { }
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  
-  app-cam-viewer {
+
+  app-three-d-viewer{
+    flex: 1;
+    min-height: 0;
+  }
+  /*app-cam-viewer {
     flex: 1;
     min-height: 0; // Fixes Firefox flexbox issue
-  }
+  }*/
 }
 
 // src/app/app.component.spec.ts
@@ -123,7 +127,6 @@ import { HttpErrorInterceptor } from './services/http-error.interceptor';
   // Put all non-standalone components here
   declarations: [
     AppComponent,
-
   ],
   imports: [
     BrowserModule,
@@ -215,6 +218,7 @@ export class AppModule { }
       </div>
     </div>
 
+
   </div>
 </div>
 
@@ -223,7 +227,7 @@ export class AppModule { }
 
 .streaming-area {
   width: 100%;
-  height: calc(100vh - 64px); // Account for header
+  height:calc(100vh - 64px); // Account for header
   margin: 0;
   border: none;
   border-radius: 0;
@@ -256,7 +260,6 @@ export class AppModule { }
 .streaming-container {
   position: relative; // Add this for absolute positioning context
   height: 100%; // Ensure full height
-
   // When empty state is shown
   &:has(.placeholder-text) {
     border: 1px solid rgba($realsense-blue, 0.1);
@@ -658,7 +661,8 @@ export class CamStreamsComponent {
         (depthExposureChange)="updateDepthExposure($event)"
         (rgbExposureChange)="updateRGBExposure($event)"
         (depthMetadataToggle)="onDepthMetadataToggle($event)"
-        (rgbMetadataToggle)="onRgbMetadataToggle($event)">
+        (rgbMetadataToggle)="onRgbMetadataToggle($event)"
+        (threeDToggleChange)="on3DToggle($event)">
       </app-sidebar-controls>
     </div>
   </mat-sidenav>
@@ -670,7 +674,7 @@ export class CamStreamsComponent {
         <mat-icon>{{ sidePanelOpen ? 'chevron_left' : 'menu' }}</mat-icon>
       </button>
       <span class="app-title">Intel RealSense Viewer</span>
-    
+
       <!-- Put any extra icons or action buttons on the right -->
       <span class="spacer"></span>
       <button mat-icon-button>
@@ -680,6 +684,7 @@ export class CamStreamsComponent {
 
     <div class="content-area">
       <app-cam-streams
+        *ngIf="!show3D"
         [showDepth]="showDepth"
         [showRGB]="showRGB"
         [depthImageUrl]="depthImageUrl"
@@ -687,6 +692,14 @@ export class CamStreamsComponent {
         [depthMetadataLines]="depthMetadataLines"
         [rgbMetadataLines]="rgbMetadataLines">
       </app-cam-streams>
+
+      <!-- OpenGL Stream (Newly Added) -->
+      <div *ngIf="show3D" class="stream-box">
+        <h3 class="stream-title">3D Point Cloud Viewer</h3>
+        <div class="img-container">
+          <img [src]="openglImageUrl" alt="3D Viewer Stream" class="stream-image" />
+        </div>
+      </div>
 
       <!-- Overlay while reconfiguring -->
       <div class="overlay" *ngIf="isReconfiguring">
@@ -710,7 +723,7 @@ export class CamStreamsComponent {
 
 .viewer-container {
   width: 100%;
-  height: 100%;
+  height: fit-content;
 }
 
 /* Sidenav styling */
@@ -719,16 +732,17 @@ export class CamStreamsComponent {
   background-color: $dark-background !important;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: fit-content;
   overflow: hidden;
   border-right: 1px solid #444;
-
+  
   .sidebar-header {
     display: flex;
+    height: 58px;
     justify-content: center;
     align-items: center;
+    position: relative;
     padding: 8px;
-    height: 48px;
     border-bottom: 1px solid #444;
     background-color: $darkest-background;
 
@@ -742,7 +756,7 @@ export class CamStreamsComponent {
     overflow-y: auto;
     height: calc(100vh - 48px);
     padding: 0 16px 16px 16px;
-
+    overflow: visible;
     &::-webkit-scrollbar {
       width: 6px;
       background-color: $dark-background;
@@ -895,7 +909,7 @@ describe('CamViewerComponent', () => {
 });
 
 // src/app/components/cam-viewer/cam-viewer.component.ts
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { WebSocketService } from '../../services/web-socket.service';
 import { HttpConfigService } from '../../services/http-config.service';
 import { SidebarControlsComponent } from '../sidebar-controls/sidebar-controls.component';
@@ -937,12 +951,11 @@ import { distinctUntilChanged, Subscription } from 'rxjs';
       MatToolbarModule,
       ]
 })
-export class CamViewerComponent implements OnInit {
+export class CamViewerComponent implements OnInit, OnDestroy{
   // Stream toggles
   showDepth = false;
   showRGB = false;
-
-
+  show3D = false;
 
   sidePanelOpen = true;
   isReconfiguring = false;
@@ -951,6 +964,8 @@ export class CamViewerComponent implements OnInit {
   // Streamed images
   depthImageUrl: string = '';
   colorImageUrl: string = '';
+  openglImageUrl: string = '';  // Store OpenGL frames
+
   // Local copies of metadata booleans
   depthMetadataOn = false;
   rgbMetadataOn = false;
@@ -961,23 +976,26 @@ export class CamViewerComponent implements OnInit {
     private webSocketService: WebSocketService,
     private httpConfigService: HttpConfigService
   ) {}
-ngOnInit(): void {
-  this.connectionSub = this.webSocketService.getConnectionStatus().pipe(
-    distinctUntilChanged()
-  ).subscribe(connected => {
-    if (connected) {
-      this.startStreaming();
-      this.webSocketService.startStream(); // Add this line
-    } else {
-      this.stopStreaming();
-      this.resetUIState();
+  ngOnInit(): void {
+    this.connectionSub = this.webSocketService.getConnectionStatus().pipe(
+      distinctUntilChanged()
+    ).subscribe(connected => {
+      if (connected) {
+        this.startStreaming();
+        this.webSocketService.startStream();
+      } else {
+        this.stopStreaming();
+        this.resetUIState();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.activeSubscriptions.unsubscribe();
+    if (this.connectionSub) {
+        this.connectionSub.unsubscribe();
     }
-  });
-}
-ngOnDestroy() {
-  this.connectionSub?.unsubscribe();
-  this.activeSubscriptions.unsubscribe();
-}
+  }
 
   private startStreaming() {
     const videoSubscription = this.webSocketService.getVideoStream().subscribe({
@@ -985,7 +1003,7 @@ ngOnDestroy() {
         // Clear previous metadata if streams are off
         this.rgbMetadataLines = frame.metadata?.rgb || [];
         this.depthMetadataLines = frame.metadata?.depth || [];
-        
+
         // Update frames and metadata
         if (this.showRGB) {
           this.colorImageUrl = 'data:image/jpeg;base64,' + frame.color;
@@ -995,22 +1013,29 @@ ngOnDestroy() {
           this.depthImageUrl = 'data:image/jpeg;base64,' + frame.depth;
           this.depthMetadataLines = frame.metadata?.depth || [];
         }
+
+        // Update OpenGL frame
+        if (this.show3D) {
+            this.openglImageUrl = 'data:image/jpeg;base64,' + frame.opengl;
+        }
       }
     });
-    
+
     // Store subscription to clean up later
     this.activeSubscriptions.add(videoSubscription);
   }
   private stopStreaming() {
     this.activeSubscriptions.unsubscribe();
     this.activeSubscriptions = new Subscription();
-    
+
     this.depthImageUrl = '';
     this.colorImageUrl = '';
+    this.openglImageUrl = '';
     this.rgbMetadataLines = [];
     this.depthMetadataLines = [];
     this.showDepth = false;
     this.showRGB = false;
+    this.show3D = false;
   }
   private resetUIState() {
     this.depthMetadataOn = false;
@@ -1027,6 +1052,17 @@ ngOnDestroy() {
   onRgbToggle(newValue: boolean) {
     this.showRGB = newValue;
     console.log('RGB Module:', newValue ? 'Enabled' : 'Disabled');
+  }
+
+  on3DToggle(newValue: boolean) {
+    this.show3D = newValue;
+    console.log('Show 3D Viewer:', newValue);
+    if (newValue) {
+        this.webSocketService.start3DStream();
+    } else {
+        this.webSocketService.stop3DStream();
+        this.openglImageUrl = ''; // Clear the image when 3D is off
+    }
   }
 
   // Update Depth configuration: this is an actual reconfig → show overlay
@@ -1088,7 +1124,6 @@ ngOnDestroy() {
       error => console.error(error)
     );
   }
-
   updateRGBExposure(value: number) {
     console.log('Updating RGB Exposure:', value);
     this.httpConfigService.updateExposure('rgb', value).subscribe(
@@ -1117,7 +1152,7 @@ ngOnDestroy() {
   stopStreamingServerSide() {
     // Tell server to stop streaming for this app
     this.webSocketService.stopStreamServerSide();
-    
+
     // Then also unsubscribe locally
 
   }
@@ -1312,53 +1347,66 @@ export class ConnectionStatusComponent implements OnInit {
 <!-- File: sidebar-controls.component.html -->
 <div class="sidebar">
   <!-- Sidebar Header -->
-<!-- Update in sidebar-controls.component.html -->
-<div class="sidebar-header">
-  <div class="header-content">
-    <div class="branding">
-      <mat-icon class="brand-icon">precision_manufacturing</mat-icon>
-      <div class="brand-text">
-        <span class="primary">RealSense </span>
-        <span class="secondary">Controller</span>
-      </div>
-    </div>
-  </div>
-</div>
+  <!-- Update in sidebar-controls.component.html -->
 
-  <!-- Camera Info Card -->
-<!-- Collapsible Device Profile Card -->
-<div class="module-card info-card">
-  <div class="card-header" (click)="toggleDeviceProfile()">
-    <div class="module-icon">
-      <mat-icon>biotech</mat-icon>
-    </div>
-    <h3>Device Profile</h3>
-    <mat-icon class="collapse-icon">
-      {{ deviceProfileCollapsed ? 'expand_more' : 'expand_less' }}
-    </mat-icon>
-  </div>
-  <div class="card-content" *ngIf="!deviceProfileCollapsed">
-    <div class="camera-info">
-      <div class="info-row">
-        <span class="info-label">Name:</span>
-        <span class="info-value">{{ cameraName }}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Serial:</span>
-        <span class="info-value serial-number">{{ cameraSerial }}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Firmware:</span>
-        <span class="info-value">{{ cameraFirmware }}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Interface:</span>
-        <span class="info-value usb-type">{{ cameraUsb }}</span>
+  <div class="sidebar-header">
+    <div class="header-content">
+      <div class="branding">
+        <mat-icon class="brand-icon">precision_manufacturing</mat-icon>
+        <div class="brand-text">
+          <span class="primary">RealSense </span>
+          <span class="secondary">Controller</span>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
+    <!-- Camera Info Card -->
+  <!-- Collapsible Device Profile Card -->
+  <div class="module-card info-card">
+    <div class="card-header" (click)="toggleDeviceProfile()">
+      <div class="module-icon">
+        <mat-icon>biotech</mat-icon>
+      </div>
+      <h3>Device Profile</h3>
+      <mat-icon class="collapse-icon">
+        {{ deviceProfileCollapsed ? 'expand_more' : 'expand_less' }}
+      </mat-icon>
+    </div>
+    <div class="card-content" *ngIf="!deviceProfileCollapsed">
+      <div class="camera-info">
+        <div class="info-row">
+          <span class="info-label">Name:</span>
+          <span class="info-value">{{ cameraName }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Serial:</span>
+          <span class="info-value serial-number">{{ cameraSerial }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Firmware:</span>
+          <span class="info-value">{{ cameraFirmware }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Interface:</span>
+          <span class="info-value usb-type">{{ cameraUsb }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D Viewer Toggle -->
+  <div class="module-card">
+    <div class="card-header">
+      <div class="module-icon">
+        <mat-icon>view_in_ar</mat-icon>
+      </div>
+      <h3>3D Viewer</h3>
+      <mat-slide-toggle [(ngModel)]="show3D" (ngModelChange)="on3DToggle($event)">
+      </mat-slide-toggle>
+    </div>
+  </div>
+  
 
   <!-- Depth Module Card -->
   <div class="module-card" [class.active]="depthModuleEnabled">
@@ -1482,7 +1530,7 @@ export class ConnectionStatusComponent implements OnInit {
 .sidebar {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 90%;
   padding: 1.5rem 1rem;
   background: linear-gradient(
     160deg,
@@ -1492,7 +1540,7 @@ export class ConnectionStatusComponent implements OnInit {
   backdrop-filter: blur(16px) saturate(180%);
   border-right: 1px solid rgba($realsense-blue, 0.15);
   box-shadow: 16px 0 40px rgba(0, 0, 0, 0.4), inset 1px 0 0 rgba(255, 255, 255, 0.05);
-  overflow-y: auto;
+  overflow: scroll;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 
@@ -1515,6 +1563,7 @@ export class ConnectionStatusComponent implements OnInit {
     margin-bottom: 1rem;
     background: linear-gradient(to right, rgba($darkest-background, 0.8), rgba($darkest-background, 0.6));
     backdrop-filter: blur(8px);
+    overflow: visible;
 
     .header-content {
       display: flex;
@@ -1672,7 +1721,7 @@ export class ConnectionStatusComponent implements OnInit {
     margin-top: auto;
     padding: 1rem;
     background: rgba($darkest-background, 0.9);
-    position: sticky;
+    position: relative;
     bottom: 0;
     z-index: 2;
   }
@@ -1838,7 +1887,7 @@ describe('SidebarControlsComponent', () => {
 
 // src/app/components/sidebar-controls/sidebar-controls.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, Output, EventEmitter,HostListener } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -1855,6 +1904,8 @@ import { CamViewerComponent } from '../cam-viewer/cam-viewer.component';
 import { HttpConfigService } from '../../services/http-config.service';
 import { WebSocketService } from '../../services/web-socket.service';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-sidebar-controls',
@@ -1904,6 +1955,7 @@ export class SidebarControlsComponent implements OnInit {
   cameraFirmware: string = '';
   cameraUsb: string = '';
 
+  show3D = false;
 
   // Outputs for toggles
   @Output() depthToggleChange = new EventEmitter<boolean>();
@@ -1914,15 +1966,27 @@ export class SidebarControlsComponent implements OnInit {
   @Output() rgbExposureChange = new EventEmitter<number>();
   // NEW events for metadata
   @Output() depthMetadataToggle = new EventEmitter<boolean>();
-  @Output() rgbMetadataToggle   = new EventEmitter<boolean>();
+  @Output() rgbMetadataToggle = new EventEmitter<boolean>();
+  @Output() threeDToggleChange = new EventEmitter<boolean>();
+
   constructor(
-    private httpConfigService: HttpConfigService,  private webSocketService: WebSocketService
-  ) {}
+    private httpConfigService: HttpConfigService, private webSocketService: WebSocketService, private http: HttpClient
+  ) { }
+
+  startViewer() {
+    this.http.post('/api/start_viewer', {}).subscribe(
+      response => {
+        console.log("Viewer started successfully:", response);
+      },
+      error => {
+        console.error("Error starting viewer:", error);
+      }
+    );
+  }
 
   ngOnInit() {
     this.loadCameraInfo();
     this.loadDefaultsFromServer();
-
   }
 
   private loadDefaultsFromServer() {
@@ -1931,15 +1995,15 @@ export class SidebarControlsComponent implements OnInit {
         // E.g., store them in a local variable if needed
         // Or you can set your UI to these defaults immediately
         console.log('[SidebarControls] Received defaults:', defaults);
-  
+
         this.selectedDepthResolution = `${defaults.depth.width}x${defaults.depth.height}`;
-        this.selectedDepthFrameRate  = defaults.depth.fps.toString();
-        this.selectedRGBResolution   = `${defaults.color.width}x${defaults.color.height}`;
-        this.selectedRGBFrameRate    = defaults.color.fps.toString();
-  
+        this.selectedDepthFrameRate = defaults.depth.fps.toString();
+        this.selectedRGBResolution = `${defaults.color.width}x${defaults.color.height}`;
+        this.selectedRGBFrameRate = defaults.color.fps.toString();
+
         this.depthExposureValue = defaults.depth.exposure;
-        this.rgbExposureValue   = defaults.color.exposure;
-  
+        this.rgbExposureValue = defaults.color.exposure;
+
         // ...any other UI toggles you want to set...
       },
       error: err => console.error('Error loading defaults:', err)
@@ -1963,7 +2027,7 @@ export class SidebarControlsComponent implements OnInit {
   onDepthToggle(newValue: boolean) {
     console.log('Depth Module toggled to:', newValue);
     this.depthToggleChange.emit(newValue);
-  
+
     // If turned OFF, also turn OFF depth metadata if it's on
     if (!newValue && this.depthMetadataEnabled) {
       this.depthMetadataEnabled = false; // visually set toggle to off
@@ -1981,6 +2045,13 @@ export class SidebarControlsComponent implements OnInit {
       this.rgbMetadataToggle.emit(false);         // notify the parent
     }
   }
+  // 3D Viewer toggled
+  on3DToggle(newValue: boolean) {
+    console.log('3D Viewer toggled to:', newValue);
+    this.threeDToggleChange.emit(newValue);
+    this.show3D = newValue;
+  }
+
   toggleDeviceProfile() {
     this.deviceProfileCollapsed = !this.deviceProfileCollapsed;
   }
@@ -2024,29 +2095,29 @@ export class SidebarControlsComponent implements OnInit {
     this.rgbExposureChange.emit(this.rgbExposureValue);
   }
 
-// sidebar-controls.component.ts (excerpt)
-// Update onHardReset() method
-// Update onHardReset
-onHardReset() {
-  if (!confirm('Hard reset will restore all defaults. Continue?')) return;
+  // sidebar-controls.component.ts (excerpt)
+  // Update onHardReset() method
+  // Update onHardReset
+  onHardReset() {
+    if (!confirm('Hard reset will restore all defaults. Continue?')) return;
 
-  // Force full disconnection
-  // this.webSocketService.forceDisconnect();
-  // this.httpConfigService.setMetadata('depth', false).subscribe();
-  // this.httpConfigService.setMetadata('rgb', false).subscribe();
-  // Reset all UI components
-  this.depthModuleEnabled = false;
-  this.rgbCameraEnabled = false;
-  this.depthMetadataEnabled = false;
-  this.rgbMetadataEnabled = false;
+    // Force full disconnection
+    // this.webSocketService.forceDisconnect();
+    // this.httpConfigService.setMetadata('depth', false).subscribe();
+    // this.httpConfigService.setMetadata('rgb', false).subscribe();
+    // Reset all UI components
+    this.depthModuleEnabled = false;
+    this.rgbCameraEnabled = false;
+    this.depthMetadataEnabled = false;
+    this.rgbMetadataEnabled = false;
 
-  // Emit changes
-  this.depthToggleChange.emit(false);
-  this.rgbToggleChange.emit(false);
-  this.depthMetadataToggle.emit(false);
-  this.rgbMetadataToggle.emit(false);
+    // Emit changes
+    this.depthToggleChange.emit(false);
+    this.rgbToggleChange.emit(false);
+    this.depthMetadataToggle.emit(false);
+    this.rgbMetadataToggle.emit(false);
 
-  // Server-side reset with delay
+    // Server-side reset with delay
     this.httpConfigService.hardReset().subscribe({
       next: () => {
         this.loadDefaultsFromServer();
@@ -2054,7 +2125,7 @@ onHardReset() {
       },
       error: (err) => console.error('Hard reset failed:', err)
     });
-}
+  }
 
 }
 
@@ -2173,18 +2244,7 @@ export class HttpConfigService {
   constructor(private http: HttpClient, private webSocketService: WebSocketService) {}
 
   updateConfiguration(module: string, resolution: string, frameRate: string): Observable<any> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.post(this.apiUrl, { module, resolution, frame_rate: frameRate })
-          .subscribe({
-            next: (res) => {
-              this.webSocketService.startStream();
-              observer.next(res);
-            },
-            error: (err) => observer.error(err)
-          });
-      }, 500); // Wait for stream stop
-    });
+    return this.http.post(this.apiUrl, { module, resolution, frame_rate: frameRate });
   }
 
   updateExposure(module: string, exposureValue: number): Observable<any> {
@@ -2272,6 +2332,15 @@ export class WebSocketService {
   constructor(private errorService: ErrorService) {
     this.initSocket();
   }
+  getOpenGLStream(): Observable<any> {
+      return new Observable(observer => {
+        this.socket.on('opengl_frame', (frame) => {
+          observer.next(frame);
+        });
+
+        return () => this.socket.off('opengl_frame');
+      });
+    }
 
   stopStreamServerSide() {
     this.socket.emit('stop_stream');
@@ -2331,6 +2400,8 @@ export class WebSocketService {
   getVideoStream(): Observable<{
     color: string;
     depth: string;
+    edge: string;
+    opengl: string; // ADDED
     metadata?: {
       rgb?: string[];
       depth?: string[];
@@ -2361,6 +2432,14 @@ export class WebSocketService {
     this.socket.removeAllListeners();
     this.connectionStatus.next(false);
     this.disconnectReason.next('manual_reset');
+  }
+
+  start3DStream(): void {
+    this.socket.emit('start_3d_stream');
+  }
+
+  stop3DStream(): void {
+    this.socket.emit('stop_3d_stream');
   }
 }
 
@@ -2431,6 +2510,3 @@ $realsense-gradient: linear-gradient(
     }
   }
 
-// src/assets/realsense-logo.png
-�PNG
-

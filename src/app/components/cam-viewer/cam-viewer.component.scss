@@ -141,6 +141,7 @@
   .viewer-container {
     flex-direction: column;
     
+    
     .control-sidenav {
       width: 100% !important;
       height: auto;
@@ -167,3 +168,49 @@
     }
   }
 }
+
+// Add these styles at the bottom of the file
+.button-group {
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+  
+  .toggle-btn {
+    padding: 8px 24px;
+    background: transparent;
+    color: rgba(168, 166, 166, 0.438);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    font-weight: 900 !important;
+
+    &.active {
+      background: transparent;
+      font-weight: 900 !important;
+      color: rgb(77, 177, 192);
+    }
+  }
+  
+  .divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(white, 0.5);
+    margin: 0 8px;
+  }
+}
+
+// Mobile responsive adjustments
+@media (max-width: 768px) {
+  .button-group {
+    .toggle-btn {
+      padding: 6px 16px;
+      font-size: 5rem;
+    }
+    .divider {
+      height: 18px;
+      margin: 0 4px;
+    }
+  }
+}
+

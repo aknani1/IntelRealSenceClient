@@ -8,7 +8,7 @@
   border-radius: 0;
   position: relative;
   background: linear-gradient(45deg, $darkest-background, darken($darkest-background, 2%));
-  overflow: hidden; // to contain the pseudo-element
+  overflow: scroll; // to contain the pseudo-element
 
   &::after {
     content: '';

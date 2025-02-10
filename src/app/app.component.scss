@@ -17,9 +17,13 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  
-  app-cam-viewer {
+
+  app-three-d-viewer{
+    flex: 1;
+    min-height: 0;
+  }
+  /*app-cam-viewer {
     flex: 1;
     min-height: 0; // Fixes Firefox flexbox issue
-  }
+  }*/
 }

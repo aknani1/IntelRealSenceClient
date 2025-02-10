@@ -16,18 +16,7 @@ export class HttpConfigService {
   constructor(private http: HttpClient, private webSocketService: WebSocketService) {}
 
   updateConfiguration(module: string, resolution: string, frameRate: string): Observable<any> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        this.http.post(this.apiUrl, { module, resolution, frame_rate: frameRate })
-          .subscribe({
-            next: (res) => {
-              this.webSocketService.startStream();
-              observer.next(res);
-            },
-            error: (err) => observer.error(err)
-          });
-      }, 500); // Wait for stream stop
-    });
+    return this.http.post(this.apiUrl, { module, resolution, frame_rate: frameRate });
   }
 
   updateExposure(module: string, exposureValue: number): Observable<any> {

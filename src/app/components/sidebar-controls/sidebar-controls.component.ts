@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, Output, EventEmitter,HostListener } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -16,6 +16,8 @@ import { CamViewerComponent } from '../cam-viewer/cam-viewer.component';
 import { HttpConfigService } from '../../services/http-config.service';
 import { WebSocketService } from '../../services/web-socket.service';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-sidebar-controls',
@@ -39,8 +41,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
     MatButtonModule,]
 })
 export class SidebarControlsComponent implements OnInit {
-  deviceProfileCollapsed = false;
-
+  deviceProfileCollapsed = true;
   // Module toggles
   depthModuleEnabled = false;
   rgbCameraEnabled = false;
@@ -65,6 +66,7 @@ export class SidebarControlsComponent implements OnInit {
   cameraFirmware: string = '';
   cameraUsb: string = '';
 
+  show3D = false;
 
   // Outputs for toggles
   @Output() depthToggleChange = new EventEmitter<boolean>();
@@ -75,15 +77,27 @@ export class SidebarControlsComponent implements OnInit {
   @Output() rgbExposureChange = new EventEmitter<number>();
   // NEW events for metadata
   @Output() depthMetadataToggle = new EventEmitter<boolean>();
-  @Output() rgbMetadataToggle   = new EventEmitter<boolean>();
+  @Output() rgbMetadataToggle = new EventEmitter<boolean>();
+  @Output() threeDToggleChange = new EventEmitter<boolean>();
+
   constructor(
-    private httpConfigService: HttpConfigService,  private webSocketService: WebSocketService
-  ) {}
+    private httpConfigService: HttpConfigService, private webSocketService: WebSocketService, private http: HttpClient
+  ) { }
+
+  startViewer() {
+    this.http.post('/api/start_viewer', {}).subscribe(
+      response => {
+        console.log("Viewer started successfully:", response);
+      },
+      error => {
+        console.error("Error starting viewer:", error);
+      }
+    );
+  }
 
   ngOnInit() {
-    this.loadCameraInfo();
     this.loadDefaultsFromServer();
-
+    this.loadCameraInfo();
   }
 
   private loadDefaultsFromServer() {
@@ -92,21 +106,22 @@ export class SidebarControlsComponent implements OnInit {
         // E.g., store them in a local variable if needed
         // Or you can set your UI to these defaults immediately
         console.log('[SidebarControls] Received defaults:', defaults);
-  
+
         this.selectedDepthResolution = `${defaults.depth.width}x${defaults.depth.height}`;
-        this.selectedDepthFrameRate  = defaults.depth.fps.toString();
-        this.selectedRGBResolution   = `${defaults.color.width}x${defaults.color.height}`;
-        this.selectedRGBFrameRate    = defaults.color.fps.toString();
-  
+        this.selectedDepthFrameRate = defaults.depth.fps.toString();
+        this.selectedRGBResolution = `${defaults.color.width}x${defaults.color.height}`;
+        this.selectedRGBFrameRate = defaults.color.fps.toString();
+
         this.depthExposureValue = defaults.depth.exposure;
-        this.rgbExposureValue   = defaults.color.exposure;
-  
+        this.rgbExposureValue = defaults.color.exposure;
+
         // ...any other UI toggles you want to set...
       },
       error: err => console.error('Error loading defaults:', err)
     });
   }
-  private loadCameraInfo() {
+
+  loadCameraInfo() {
     this.httpConfigService.getCameraInfo().subscribe({
       next: (info) => {
         this.cameraName = info.name || '';
@@ -124,7 +139,7 @@ export class SidebarControlsComponent implements OnInit {
   onDepthToggle(newValue: boolean) {
     console.log('Depth Module toggled to:', newValue);
     this.depthToggleChange.emit(newValue);
-  
+
     // If turned OFF, also turn OFF depth metadata if it's on
     if (!newValue && this.depthMetadataEnabled) {
       this.depthMetadataEnabled = false; // visually set toggle to off
@@ -142,8 +157,16 @@ export class SidebarControlsComponent implements OnInit {
       this.rgbMetadataToggle.emit(false);         // notify the parent
     }
   }
+  // 3D Viewer toggled
+  on3DToggle(newValue: boolean) {
+    console.log('3D Viewer toggled to:', newValue);
+    this.threeDToggleChange.emit(newValue);
+    this.show3D = newValue;
+  }
+
   toggleDeviceProfile() {
     this.deviceProfileCollapsed = !this.deviceProfileCollapsed;
+    this.loadCameraInfo();
   }
   onDepthMetadataToggle(newValue: boolean) {
     this.httpConfigService.setMetadata('depth', newValue).subscribe({
@@ -185,36 +208,37 @@ export class SidebarControlsComponent implements OnInit {
     this.rgbExposureChange.emit(this.rgbExposureValue);
   }
 
-// sidebar-controls.component.ts (excerpt)
-// Update onHardReset() method
-// Update onHardReset
-onHardReset() {
-  if (!confirm('Hard reset will restore all defaults. Continue?')) return;
+  // sidebar-controls.component.ts (excerpt)
+  // Update onHardReset() method
+  // Update onHardReset
+  onHardReset() {
+    if (!confirm('Hard reset will restore all defaults. Continue?')) return;
 
-  // Force full disconnection
-  // this.webSocketService.forceDisconnect();
-  // this.httpConfigService.setMetadata('depth', false).subscribe();
-  // this.httpConfigService.setMetadata('rgb', false).subscribe();
-  // Reset all UI components
-  this.depthModuleEnabled = false;
-  this.rgbCameraEnabled = false;
-  this.depthMetadataEnabled = false;
-  this.rgbMetadataEnabled = false;
+    // Force full disconnection
+    // this.webSocketService.forceDisconnect();
+    // this.httpConfigService.setMetadata('depth', false).subscribe();
+    // this.httpConfigService.setMetadata('rgb', false).subscribe();
+    // Reset all UI components
+    this.depthModuleEnabled = false;
+    this.rgbCameraEnabled = false;
+    this.depthMetadataEnabled = false;
+    this.rgbMetadataEnabled = false;
+    this.deviceProfileCollapsed = true;
+    // Emit changes
+    this.depthToggleChange.emit(false);
+    this.rgbToggleChange.emit(false);
+    this.depthMetadataToggle.emit(false);
+    this.rgbMetadataToggle.emit(false);
 
-  // Emit changes
-  this.depthToggleChange.emit(false);
-  this.rgbToggleChange.emit(false);
-  this.depthMetadataToggle.emit(false);
-  this.rgbMetadataToggle.emit(false);
-
-  // Server-side reset with delay
+    // Server-side reset with delay
     this.httpConfigService.hardReset().subscribe({
       next: () => {
         this.loadDefaultsFromServer();
+        this.loadCameraInfo();
         this.webSocketService.startStream();
       },
       error: (err) => console.error('Hard reset failed:', err)
     });
-}
+  }
 
 }

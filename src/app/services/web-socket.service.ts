@@ -14,6 +14,15 @@ export class WebSocketService {
   constructor(private errorService: ErrorService) {
     this.initSocket();
   }
+  getOpenGLStream(): Observable<any> {
+      return new Observable(observer => {
+        this.socket.on('opengl_frame', (frame) => {
+          observer.next(frame);
+        });
+
+        return () => this.socket.off('opengl_frame');
+      });
+    }
 
   stopStreamServerSide() {
     this.socket.emit('stop_stream');
@@ -73,6 +82,7 @@ export class WebSocketService {
   getVideoStream(): Observable<{
     color: string;
     depth: string;
+    D3: string;
     metadata?: {
       rgb?: string[];
       depth?: string[];
@@ -108,12 +118,8 @@ export class WebSocketService {
   start3DStream(): void {
     this.socket.emit('start_3d_stream');
   }
-  
-  getPointCloudStream(): Observable<any> {
-    return new Observable(observer => {
-      this.socket.on('point_cloud', (data: any) => observer.next(data));
-      return () => this.socket.off('point_cloud');
-    });
+
+  stop3DStream(): void {
+    this.socket.emit('stop_3d_stream');
   }
-  
 }

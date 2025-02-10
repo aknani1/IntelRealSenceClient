@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { WebSocketService } from '../../services/web-socket.service';
 import { HttpConfigService } from '../../services/http-config.service';
 import { SidebarControlsComponent } from '../sidebar-controls/sidebar-controls.component';
@@ -19,7 +19,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from '../../app-routing.module';
 import { ConnectionStatusComponent } from '../connection-status/connection-status.component';
 import { distinctUntilChanged, Subscription } from 'rxjs';
-import { ThreeDViewerComponent } from '../three-d-viewer/three-d-viewer.component';
 
 @Component({
   selector: 'app-cam-viewer',
@@ -39,15 +38,13 @@ import { ThreeDViewerComponent } from '../three-d-viewer/three-d-viewer.componen
       MatSelectModule,
       MatButtonModule,
       MatToolbarModule,
-      ThreeDViewerComponent,
       ]
 })
-export class CamViewerComponent implements OnInit {
+export class CamViewerComponent implements OnInit, OnDestroy{
   // Stream toggles
   showDepth = false;
   showRGB = false;
-
-
+  show3D = false;
 
   sidePanelOpen = true;
   isReconfiguring = false;
@@ -56,33 +53,42 @@ export class CamViewerComponent implements OnInit {
   // Streamed images
   depthImageUrl: string = '';
   colorImageUrl: string = '';
+  openglImageUrl: string = '';  // Store OpenGL frames
+  Url3D: string = '';
+
   // Local copies of metadata booleans
   depthMetadataOn = false;
   rgbMetadataOn = false;
   private activeSubscriptions = new Subscription();
   private connectionSub: Subscription | null = null;
 
+  activeButton: string = 'button1';
+
+
   constructor(
     private webSocketService: WebSocketService,
     private httpConfigService: HttpConfigService
   ) {}
-ngOnInit(): void {
-  this.connectionSub = this.webSocketService.getConnectionStatus().pipe(
-    distinctUntilChanged()
-  ).subscribe(connected => {
-    if (connected) {
-      this.startStreaming();
-      this.webSocketService.startStream(); // Add this line
-    } else {
-      this.stopStreaming();
-      this.resetUIState();
+  ngOnInit(): void {
+    this.connectionSub = this.webSocketService.getConnectionStatus().pipe(
+      distinctUntilChanged()
+    ).subscribe(connected => {
+      if (connected) {
+        this.startStreaming();
+        this.webSocketService.startStream();
+      } else {
+        this.stopStreaming();
+        this.resetUIState();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.activeSubscriptions.unsubscribe();
+    if (this.connectionSub) {
+        this.connectionSub.unsubscribe();
     }
-  });
-}
-ngOnDestroy() {
-  this.connectionSub?.unsubscribe();
-  this.activeSubscriptions.unsubscribe();
-}
+  }
 
   private startStreaming() {
     const videoSubscription = this.webSocketService.getVideoStream().subscribe({
@@ -90,7 +96,7 @@ ngOnDestroy() {
         // Clear previous metadata if streams are off
         this.rgbMetadataLines = frame.metadata?.rgb || [];
         this.depthMetadataLines = frame.metadata?.depth || [];
-        
+
         // Update frames and metadata
         if (this.showRGB) {
           this.colorImageUrl = 'data:image/jpeg;base64,' + frame.color;
@@ -100,22 +106,28 @@ ngOnDestroy() {
           this.depthImageUrl = 'data:image/jpeg;base64,' + frame.depth;
           this.depthMetadataLines = frame.metadata?.depth || [];
         }
+
+        if (this.show3D) {
+            this.Url3D = 'data:image/jpeg;base64,' + frame.D3;
+        }
       }
     });
-    
+
     // Store subscription to clean up later
     this.activeSubscriptions.add(videoSubscription);
   }
   private stopStreaming() {
     this.activeSubscriptions.unsubscribe();
     this.activeSubscriptions = new Subscription();
-    
+
     this.depthImageUrl = '';
     this.colorImageUrl = '';
+    this.openglImageUrl = '';
     this.rgbMetadataLines = [];
     this.depthMetadataLines = [];
     this.showDepth = false;
     this.showRGB = false;
+    this.show3D = false;
   }
   private resetUIState() {
     this.depthMetadataOn = false;
@@ -193,7 +205,6 @@ ngOnDestroy() {
       error => console.error(error)
     );
   }
-
   updateRGBExposure(value: number) {
     console.log('Updating RGB Exposure:', value);
     this.httpConfigService.updateExposure('rgb', value).subscribe(
@@ -222,9 +233,17 @@ ngOnDestroy() {
   stopStreamingServerSide() {
     // Tell server to stop streaming for this app
     this.webSocketService.stopStreamServerSide();
-    
+
     // Then also unsubscribe locally
 
   }
+  setActiveButton(button: string) {
+    this.activeButton = button;
+    if(button =='button2'){
+      this.show3D = true;
+    }else{
+      this.show3D = false;
+    }
+    // Add your button click logic here
+  }
 }
-

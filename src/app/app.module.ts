@@ -24,7 +24,6 @@ import { ConnectionStatusComponent } from './components/connection-status/connec
 import { SnackbarComponent } from './components/snackbar/snackbar.component';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { HttpErrorInterceptor } from './services/http-error.interceptor';
-import { ThreeDViewerComponent } from './components/three-d-viewer/three-d-viewer.component';
 
 @NgModule({
   // Put all non-standalone components here
@@ -46,8 +45,7 @@ import { ThreeDViewerComponent } from './components/three-d-viewer/three-d-viewe
     MatButtonModule,
     CamViewerComponent,
     SnackbarComponent,
-    ConnectionStatusComponent,
-    ThreeDViewerComponent
+    ConnectionStatusComponent
     ],
   providers: [
     provideHttpClient(),  {

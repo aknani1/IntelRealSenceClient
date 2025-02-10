@@ -1,6 +1,6 @@
 // File: cam-streams.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, input, Input } from '@angular/core';
 
 @Component({
   selector: 'app-cam-streams',
@@ -14,9 +14,10 @@ import { Component, Input } from '@angular/core';
 export class CamStreamsComponent {
   @Input() showDepth = false;
   @Input() showRGB = false;
-
+  @Input() show3D = false;
   @Input() depthImageUrl: string | null = null;
   @Input() colorImageUrl: string | null = null;
+  @Input() Url3D: string | null = null;
   @Input() depthMetadataLines: string[] = [];
   @Input() rgbMetadataLines: string[] = [];
 

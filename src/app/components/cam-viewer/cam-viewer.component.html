@@ -34,9 +34,24 @@
         <mat-icon>{{ sidePanelOpen ? 'chevron_left' : 'menu' }}</mat-icon>
       </button>
       <span class="app-title">Intel RealSense Viewer</span>
-    
+
       <!-- Put any extra icons or action buttons on the right -->
       <span class="spacer"></span>
+      <!-- Replace existing button-group with this -->
+      <div class="button-group">
+        <button class="toggle-btn" 
+                [class.active]="activeButton === 'button1'"
+                (click)="setActiveButton('button1')">
+          2D
+        </button>
+        <div class="divider"></div>
+        <button class="toggle-btn"
+                [class.active]="activeButton === 'button2'"
+                (click)="setActiveButton('button2')">
+          3D
+        </button>
+      </div>
+     
       <button mat-icon-button>
         <mat-icon>help_outline</mat-icon>
       </button>
@@ -46,11 +61,15 @@
       <app-cam-streams
         [showDepth]="showDepth"
         [showRGB]="showRGB"
+        [show3D]="show3D"
         [depthImageUrl]="depthImageUrl"
         [colorImageUrl]="colorImageUrl"
+        [Url3D]="Url3D"
         [depthMetadataLines]="depthMetadataLines"
         [rgbMetadataLines]="rgbMetadataLines">
       </app-cam-streams>
+
+      
 
       <!-- Overlay while reconfiguring -->
       <div class="overlay" *ngIf="isReconfiguring">
@@ -62,4 +81,3 @@
     </div>
   </mat-sidenav-content>
 </mat-sidenav-container>
-
