@@ -12,6 +12,7 @@ export class HttpConfigService {
   private setMetaDataUrl = 'http://localhost:5000/api/set_metadata'; // endpoint for metadata
   private cameraInfoUrl = 'http://localhost:5000/api/camera_info';
   private hardResetUrl = 'http://localhost:5000/api/hard_reset';
+  private show3DUrl = 'http://localhost:5000/api/set3D';
 
   constructor(private http: HttpClient, private webSocketService: WebSocketService) {}
 
@@ -38,5 +39,8 @@ export class HttpConfigService {
 
   getDefaults(): Observable<any> {
     return this.http.get('http://localhost:5000/api/defaults');
+  }
+  show3D(show3D: boolean): Observable<any>{
+    return this.http.post(this.show3DUrl, {show3D});
   }
 }

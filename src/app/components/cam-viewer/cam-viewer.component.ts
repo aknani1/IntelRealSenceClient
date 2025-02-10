@@ -244,6 +244,10 @@ export class CamViewerComponent implements OnInit, OnDestroy{
     }else{
       this.show3D = false;
     }
+    this.httpConfigService.show3D(this.show3D).subscribe(
+      response => console.log(response),
+      error => console.error(error)
+    );
     // Add your button click logic here
   }
 }

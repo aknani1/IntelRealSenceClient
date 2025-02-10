@@ -164,8 +164,8 @@ export class AppModule { }
 <div class="streaming-area">
   <!-- Main container controlling single vs double stream layout -->
   <div class="streaming-container"
-       [class.single-stream]="(showDepth && !showRGB) || (!showDepth && showRGB)"
-       [class.double-stream]="showDepth && showRGB">
+       [class.single-stream]="(showDepth && !showRGB) || (!showDepth && showRGB) || show3D"
+       [class.double-stream]="showDepth && showRGB && !show3D">
     
     <!-- If nothing is toggled, show placeholder -->
     <div *ngIf="!showDepth && !showRGB" class="placeholder-text">
@@ -173,7 +173,7 @@ export class AppModule { }
     </div>
 
     <!-- Depth Stream -->
-    <div *ngIf="showDepth" class="stream-box">
+    <div *ngIf="showDepth && !show3D" class="stream-box">
       <h3 class="stream-title">Depth Stream</h3>
       <div class="img-container">
         <ng-container *ngIf="depthImageUrl; else noDepthStream">
@@ -196,7 +196,7 @@ export class AppModule { }
     </div>
 
     <!-- RGB Stream -->
-    <div *ngIf="showRGB" class="stream-box">
+    <div *ngIf="showRGB && !show3D" class="stream-box">
       <h3 class="stream-title">RGB Stream</h3>
       <div class="img-container">
         <ng-container *ngIf="colorImageUrl; else noRgbStream">
@@ -218,6 +218,22 @@ export class AppModule { }
       </div>
     </div>
 
+    <!-- 3D Stream -->
+    <div *ngIf="show3D" class="stream-box">
+      <h3 class="stream-title">3D Stream</h3>
+      <div class="img-container">
+        <ng-container *ngIf="Url3D; else no3DStream">
+          <img
+            [src]="Url3D"
+            alt="3D Viewer Stream"
+          />
+        </ng-container>
+        <ng-template #no3DStream>
+          <div class="no-stream-center">No 3D stream available</div>
+        </ng-template>
+      </div>
+    </div>
+
 
   </div>
 </div>
@@ -233,7 +249,7 @@ export class AppModule { }
   border-radius: 0;
   position: relative;
   background: linear-gradient(45deg, $darkest-background, darken($darkest-background, 2%));
-  overflow: hidden; // to contain the pseudo-element
+  overflow: scroll; // to contain the pseudo-element
 
   &::after {
     content: '';
@@ -613,7 +629,7 @@ describe('CamStreamsComponent', () => {
 // src/app/components/cam-streams/cam-streams.component.ts
 // File: cam-streams.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, input, Input } from '@angular/core';
 
 @Component({
   selector: 'app-cam-streams',
@@ -627,9 +643,10 @@ import { Component, Input } from '@angular/core';
 export class CamStreamsComponent {
   @Input() showDepth = false;
   @Input() showRGB = false;
-
+  @Input() show3D = false;
   @Input() depthImageUrl: string | null = null;
   @Input() colorImageUrl: string | null = null;
+  @Input() Url3D: string | null = null;
   @Input() depthMetadataLines: string[] = [];
   @Input() rgbMetadataLines: string[] = [];
 
@@ -661,8 +678,7 @@ export class CamStreamsComponent {
         (depthExposureChange)="updateDepthExposure($event)"
         (rgbExposureChange)="updateRGBExposure($event)"
         (depthMetadataToggle)="onDepthMetadataToggle($event)"
-        (rgbMetadataToggle)="onRgbMetadataToggle($event)"
-        (threeDToggleChange)="on3DToggle($event)">
+        (rgbMetadataToggle)="onRgbMetadataToggle($event)">
       </app-sidebar-controls>
     </div>
   </mat-sidenav>
@@ -677,6 +693,21 @@ export class CamStreamsComponent {
 
       <!-- Put any extra icons or action buttons on the right -->
       <span class="spacer"></span>
+      <!-- Replace existing button-group with this -->
+      <div class="button-group">
+        <button class="toggle-btn" 
+                [class.active]="activeButton === 'button1'"
+                (click)="setActiveButton('button1')">
+          2D
+        </button>
+        <div class="divider"></div>
+        <button class="toggle-btn"
+                [class.active]="activeButton === 'button2'"
+                (click)="setActiveButton('button2')">
+          3D
+        </button>
+      </div>
+     
       <button mat-icon-button>
         <mat-icon>help_outline</mat-icon>
       </button>
@@ -684,22 +715,17 @@ export class CamStreamsComponent {
 
     <div class="content-area">
       <app-cam-streams
-        *ngIf="!show3D"
         [showDepth]="showDepth"
         [showRGB]="showRGB"
+        [show3D]="show3D"
         [depthImageUrl]="depthImageUrl"
         [colorImageUrl]="colorImageUrl"
+        [Url3D]="Url3D"
         [depthMetadataLines]="depthMetadataLines"
         [rgbMetadataLines]="rgbMetadataLines">
       </app-cam-streams>
 
-      <!-- OpenGL Stream (Newly Added) -->
-      <div *ngIf="show3D" class="stream-box">
-        <h3 class="stream-title">3D Point Cloud Viewer</h3>
-        <div class="img-container">
-          <img [src]="openglImageUrl" alt="3D Viewer Stream" class="stream-image" />
-        </div>
-      </div>
+      
 
       <!-- Overlay while reconfiguring -->
       <div class="overlay" *ngIf="isReconfiguring">
@@ -856,6 +882,7 @@ export class CamStreamsComponent {
   .viewer-container {
     flex-direction: column;
     
+    
     .control-sidenav {
       width: 100% !important;
       height: auto;
@@ -879,6 +906,51 @@ export class CamStreamsComponent {
     
     .stream-box {
       aspect-ratio: 4/3;
+    }
+  }
+}
+
+// Add these styles at the bottom of the file
+.button-group {
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+  
+  .toggle-btn {
+    padding: 8px 24px;
+    background: transparent;
+    color: rgba(168, 166, 166, 0.438);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    font-weight: 900 !important;
+
+    &.active {
+      background: transparent;
+      font-weight: 900 !important;
+      color: rgb(77, 177, 192);
+    }
+  }
+  
+  .divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(white, 0.5);
+    margin: 0 8px;
+  }
+}
+
+// Mobile responsive adjustments
+@media (max-width: 768px) {
+  .button-group {
+    .toggle-btn {
+      padding: 6px 16px;
+      font-size: 5rem;
+    }
+    .divider {
+      height: 18px;
+      margin: 0 4px;
     }
   }
 }
@@ -965,12 +1037,16 @@ export class CamViewerComponent implements OnInit, OnDestroy{
   depthImageUrl: string = '';
   colorImageUrl: string = '';
   openglImageUrl: string = '';  // Store OpenGL frames
+  Url3D: string = '';
 
   // Local copies of metadata booleans
   depthMetadataOn = false;
   rgbMetadataOn = false;
   private activeSubscriptions = new Subscription();
   private connectionSub: Subscription | null = null;
+
+  activeButton: string = 'button1';
+
 
   constructor(
     private webSocketService: WebSocketService,
@@ -1014,9 +1090,8 @@ export class CamViewerComponent implements OnInit, OnDestroy{
           this.depthMetadataLines = frame.metadata?.depth || [];
         }
 
-        // Update OpenGL frame
         if (this.show3D) {
-            this.openglImageUrl = 'data:image/jpeg;base64,' + frame.opengl;
+            this.Url3D = 'data:image/jpeg;base64,' + frame.D3;
         }
       }
     });
@@ -1052,17 +1127,6 @@ export class CamViewerComponent implements OnInit, OnDestroy{
   onRgbToggle(newValue: boolean) {
     this.showRGB = newValue;
     console.log('RGB Module:', newValue ? 'Enabled' : 'Disabled');
-  }
-
-  on3DToggle(newValue: boolean) {
-    this.show3D = newValue;
-    console.log('Show 3D Viewer:', newValue);
-    if (newValue) {
-        this.webSocketService.start3DStream();
-    } else {
-        this.webSocketService.stop3DStream();
-        this.openglImageUrl = ''; // Clear the image when 3D is off
-    }
   }
 
   // Update Depth configuration: this is an actual reconfig → show overlay
@@ -1155,6 +1219,19 @@ export class CamViewerComponent implements OnInit, OnDestroy{
 
     // Then also unsubscribe locally
 
+  }
+  setActiveButton(button: string) {
+    this.activeButton = button;
+    if(button =='button2'){
+      this.show3D = true;
+    }else{
+      this.show3D = false;
+    }
+    this.httpConfigService.show3D(this.show3D).subscribe(
+      response => console.log(response),
+      error => console.error(error)
+    );
+    // Add your button click logic here
   }
 }
 
@@ -1392,18 +1469,6 @@ export class ConnectionStatusComponent implements OnInit {
           <span class="info-value usb-type">{{ cameraUsb }}</span>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- 3D Viewer Toggle -->
-  <div class="module-card">
-    <div class="card-header">
-      <div class="module-icon">
-        <mat-icon>view_in_ar</mat-icon>
-      </div>
-      <h3>3D Viewer</h3>
-      <mat-slide-toggle [(ngModel)]="show3D" (ngModelChange)="on3DToggle($event)">
-      </mat-slide-toggle>
     </div>
   </div>
   
@@ -1929,8 +1994,7 @@ import { HttpClient } from '@angular/common/http';
     MatButtonModule,]
 })
 export class SidebarControlsComponent implements OnInit {
-  deviceProfileCollapsed = false;
-
+  deviceProfileCollapsed = true;
   // Module toggles
   depthModuleEnabled = false;
   rgbCameraEnabled = false;
@@ -1985,8 +2049,8 @@ export class SidebarControlsComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.loadCameraInfo();
     this.loadDefaultsFromServer();
+    this.loadCameraInfo();
   }
 
   private loadDefaultsFromServer() {
@@ -2009,7 +2073,8 @@ export class SidebarControlsComponent implements OnInit {
       error: err => console.error('Error loading defaults:', err)
     });
   }
-  private loadCameraInfo() {
+
+  loadCameraInfo() {
     this.httpConfigService.getCameraInfo().subscribe({
       next: (info) => {
         this.cameraName = info.name || '';
@@ -2054,6 +2119,7 @@ export class SidebarControlsComponent implements OnInit {
 
   toggleDeviceProfile() {
     this.deviceProfileCollapsed = !this.deviceProfileCollapsed;
+    this.loadCameraInfo();
   }
   onDepthMetadataToggle(newValue: boolean) {
     this.httpConfigService.setMetadata('depth', newValue).subscribe({
@@ -2110,7 +2176,7 @@ export class SidebarControlsComponent implements OnInit {
     this.rgbCameraEnabled = false;
     this.depthMetadataEnabled = false;
     this.rgbMetadataEnabled = false;
-
+    this.deviceProfileCollapsed = true;
     // Emit changes
     this.depthToggleChange.emit(false);
     this.rgbToggleChange.emit(false);
@@ -2121,6 +2187,7 @@ export class SidebarControlsComponent implements OnInit {
     this.httpConfigService.hardReset().subscribe({
       next: () => {
         this.loadDefaultsFromServer();
+        this.loadCameraInfo();
         this.webSocketService.startStream();
       },
       error: (err) => console.error('Hard reset failed:', err)
@@ -2240,6 +2307,7 @@ export class HttpConfigService {
   private setMetaDataUrl = 'http://localhost:5000/api/set_metadata'; // endpoint for metadata
   private cameraInfoUrl = 'http://localhost:5000/api/camera_info';
   private hardResetUrl = 'http://localhost:5000/api/hard_reset';
+  private show3DUrl = 'http://localhost:5000/api/set3D';
 
   constructor(private http: HttpClient, private webSocketService: WebSocketService) {}
 
@@ -2266,6 +2334,9 @@ export class HttpConfigService {
 
   getDefaults(): Observable<any> {
     return this.http.get('http://localhost:5000/api/defaults');
+  }
+  show3D(show3D: boolean): Observable<any>{
+    return this.http.post(this.show3DUrl, {show3D});
   }
 }
 
@@ -2400,8 +2471,7 @@ export class WebSocketService {
   getVideoStream(): Observable<{
     color: string;
     depth: string;
-    edge: string;
-    opengl: string; // ADDED
+    D3: string;
     metadata?: {
       rgb?: string[];
       depth?: string[];
